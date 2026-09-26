@@ -47,7 +47,7 @@ function App(){
   <main className="main"><header className="topbar"><div><h1>{current?.label}</h1><p>نظام مستقل يعمل محلياً ويحفظ البيانات على هذا الجهاز</p></div><div className="top-actions"><div className="date">{new Date().toLocaleDateString('ar-EG',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</div></div></header>
    {section==='dashboard'&&<Dashboard employees={employees} punches={punches} leaves={leaves} go={setSection}/>}
    {section==='employees'&&<Employees employees={employees} setEmployees={setEmployees}/>}
-   {section==='attendance'&&<Attendance employees={employees} punches={punches} setPunches={setPunches} settings={settings}/>}
+   {section==='attendance'&&<Attendance employees={employees} punches={punches} setPunches={setPunches} settings={settings} leaves={leaves}/>} 
    {section==='leaves'&&<Leaves employees={employees} rows={leaves} setRows={setLeaves}/>}
    {section==='missions'&&<Missions employees={employees} rows={missions} setRows={setMissions}/>}
    {section==='penalties'&&<Penalties employees={employees} rows={penalties} setRows={setPenalties}/>}
@@ -80,17 +80,97 @@ function Employees({employees,setEmployees}:{employees:Employee[];setEmployees:D
 }
 function FormEmployee({form,setForm}:{form:{code:string;name:string;department:string;job:string;phone:string};setForm:Dispatch<SetStateAction<{code:string;name:string;department:string;job:string;phone:string}>>}){return <div className="form-grid">{[['code','الرقم الوظيفي'],['name','اسم الموظف'],['department','القسم'],['job','الوظيفة'],['phone','رقم الهاتف']].map(([k,l])=><label key={k}>{l}<input value={form[k as keyof typeof form]} onChange={e=>setForm(x=>({...x,[k]:e.target.value}))}/></label>)}</div>}
 
-function Attendance({employees,punches,setPunches,settings}:{employees:Employee[];punches:Punch[];setPunches:Dispatch<SetStateAction<Punch[]>>;settings:any}){
+function Attendance({employees,punches,setPunches,settings,leaves}:{employees:Employee[];punches:Punch[];setPunches:Dispatch<SetStateAction<Punch[]>>;settings:any;leaves:Leave[]}){
  const input=useRef<HTMLInputElement>(null),[date,setDate]=useState(dateNow()),[q,setQ]=useState(''),[month,setMonth]=useState(dateNow().slice(0,7))
- const dayRows=useMemo(()=>{const map=new Map<string,Punch[]>();punches.filter(x=>x.date===date).forEach(x=>map.set(x.code,[...(map.get(x.code)||[]),x]));return employees.map(e=>{const ps=(map.get(e.code)||[]).sort((a,b)=>a.time.localeCompare(b.time));return {e,first:ps[0]?.time||'',last:ps.length>1?ps[ps.length-1].time:'',count:ps.length,status:ps.length?'حاضر':'غياب',late:ps[0]?.time>addMinutes(settings.start,Number(settings.grace)||0)}})},[punches,employees,date,settings])
- const importFile=async(e:ChangeEvent<HTMLInputElement>)=>{const f=e.target.files?.[0];if(!f)return;try{const wb=XLSX.read(await f.arrayBuffer(),{type:'array',cellDates:true});const ws=wb.Sheets[wb.SheetNames[0]];const raw=XLSX.utils.sheet_to_json<any[]>(ws,{header:1,defval:''});const h=(raw[0]||[]).map(x=>String(x).trim().toLowerCase());const idx=(a:string[])=>h.findIndex(x=>a.some(y=>x.includes(y)));const ci=idx(['id','code','رقم','كود','employee','userid','رقم الموظف']),ni=idx(['name','اسم','employee name']),di=idx(['date','تاريخ','datetime','日期']),ti=idx(['time','وقت']);const out:Punch[]=[];for(let i=1;i<raw.length;i++){const r=raw[i];if(!r?.length)continue;let code=String(r[ci>=0?ci:0]??'').trim();let name=String(r[ni>=0?ni:1]??'').trim();let d='',t='';const dv=di>=0?r[di]:'';const tv=ti>=0?r[ti]:'';if(dv instanceof Date){d=dv.toISOString().slice(0,10);t=dv.toTimeString().slice(0,5)}else{const parts=String(dv||'').trim().split(/[ T]+/);d=normalDate(parts[0]);if(parts[1])t=normalTime(parts[1])}if(!t||t==='00:00')t=tv instanceof Date?tv.toTimeString().slice(0,5):normalTime(String(tv||''));if(!d)continue;const emp=employees.find(x=>x.code===code)||employees.find(x=>x.name===name);if(emp){code=emp.code;name=emp.name}out.push({id:uid()+i,code,name:name||'غير معروف',date:d,time:t})}setPunches(xs=>[...xs,...out]);alert('تم استيراد '+out.length+' حركة بصمة')}catch(err){console.error(err);alert('تعذر قراءة ملف Excel. تأكد أن الصف الأول يحتوي عناوين الأعمدة.')}e.target.value=''}
- const monthRows=employees.map(e=>{const ps=punches.filter(x=>x.code===e.code&&x.date.startsWith(month));const dates=new Set(ps.map(x=>x.date));return {الرقم:e.code,الاسم:e.name,حضور:dates.size,غياب:Math.max(0,new Date(month+'-01').getDate()===1?0:0),حركات:ps.length}})
- const exportDay=()=>downloadExcel(dayRows.map(x=>({الرقم:x.e.code,الاسم:x.e.name,التاريخ:date,أول_بصمة:x.first||'—',آخر_بصمة:x.last||'—',عدد_البصمات:x.count,الحالة:x.status,التأخير:x.late?'متأخر':''})),'attendance-'+date+'.xlsx')
- const exportMonth=()=>downloadExcel(monthRows,'attendance-'+month+'.xlsx')
+ const holidays=useMemo(()=>new Set(String(settings.holidays||'').split(/[\\n,;]+/).map((x:string)=>normalDate(x.trim())).filter(Boolean)),[settings.holidays])
+ const approvedLeave=(employeeId:number,d:string)=>leaves.some(x=>x.employeeId===employeeId&&x.status==='معتمدة'&&d>=x.from&&d<=x.to)
+ const isFriday=(d:string)=>new Date(d+'T00:00:00').getDay()===5
+ const isOff=(d:string)=>isFriday(d)&&settings.fridayOff
+ const dayRows=useMemo(()=>{
+   const map=new Map<string,Punch[]>()
+   punches.filter(x=>x.date===date).forEach(x=>map.set(x.code,[...(map.get(x.code)||[]),x]))
+   return employees.map(e=>{
+     const ps=(map.get(e.code)||[]).sort((a,b)=>a.time.localeCompare(b.time))
+     const leave=approvedLeave(e.id,date)
+     const off=isOff(date),holiday=holidays.has(date)
+     const status=ps.length?'حاضر':(leave?'إجازة':(holiday?'عطلة رسمية':(off?'جمعة':'غياب')))
+     return {e,first:ps[0]?.time||'',last:ps.length>1?ps[ps.length-1].time:'',count:ps.length,status,late:!!ps[0]&&ps[0].time>addMinutes(settings.start,Number(settings.grace)||0),single:ps.length===1}
+   })
+ },[punches,employees,date,settings,holidays,leaves])
+ const monthDays=useMemo(()=>{
+   const [y,m]=month.split('-').map(Number),n=new Date(y,m,0).getDate()
+   return Array.from({length:n},(_,i)=>month+'-'+String(i+1).padStart(2,'0'))
+ },[month])
+ const monthMatrix=useMemo(()=>employees.map(e=>{
+   let present=0,absent=0,single=0,leaveDays=0,offDays=0,holidayDays=0
+   const cells=monthDays.map(d=>{
+     const ps=punches.filter(x=>x.code===e.code&&x.date===d).sort((a,b)=>a.time.localeCompare(b.time))
+     const friday=isFriday(d),holiday=holidays.has(d),leave=approvedLeave(e.id,d)
+     let value='غياب'
+     if(ps.length){present++;if(ps.length===1){single++;value='بصمة واحدة'}else value='حاضر'}
+     else if(leave){leaveDays++;value='إجازة'}
+     else if(holiday){holidayDays++;value='عطلة'}
+     else if(isOff(d)){offDays++;value='جمعة'}
+     else absent++
+     return {date:d,value,first:ps[0]?.time||'',last:ps.length>1?ps[ps.length-1].time:''}
+   })
+   const workdays=monthDays.filter(d=>!isOff(d)&&!holidays.has(d)&&!approvedLeave(e.id,d)).length
+   return {e,cells,present,absent,single,leaveDays,offDays,holidayDays,workdays}
+ }),[employees,punches,monthDays,holidays,settings,leaves])
+ const importFile=async(e:ChangeEvent<HTMLInputElement>)=>{
+   const f=e.target.files?.[0];if(!f)return
+   try{
+     const wb=XLSX.read(await f.arrayBuffer(),{type:'array',cellDates:true})
+     const ws=wb.Sheets[wb.SheetNames[0]]
+     const raw=XLSX.utils.sheet_to_json<any[]>(ws,{header:1,defval:''})
+     const h=(raw[0]||[]).map((x:any)=>String(x).trim().toLowerCase())
+     const idx=(a:string[])=>h.findIndex((x:string)=>a.some(y=>x.includes(y)))
+     const ci=idx(['id','code','رقم','كود','employee','userid','رقم الموظف','pin'])
+     const ni=idx(['name','اسم','employee name','الاسم','الموظف'])
+     const di=idx(['date','تاريخ','datetime','日期','التاريخ'])
+     const ti=idx(['time','وقت','check time','وقت الحضور','الوقت'])
+     const out:Punch[]=[]
+     for(let i=1;i<raw.length;i++){
+       const r=raw[i];if(!r?.length)continue
+       let code=String(r[ci>=0?ci:0]??'').trim(),name=String(r[ni>=0?ni:1]??'').trim(),d='',t=''
+       const dv=di>=0?r[di]:'',tv=ti>=0?r[ti]:''
+       if(dv instanceof Date){d=dv.toISOString().slice(0,10);t=dv.toTimeString().slice(0,5)}
+       else{
+         const rawDate=String(dv||'').trim()
+         const parts=rawDate.split(/[ T]+/)
+         d=normalDate(parts[0])
+         if(parts[1])t=normalTime(parts[1])
+       }
+       if(!t||t==='00:00')t=tv instanceof Date?tv.toTimeString().slice(0,5):normalTime(String(tv||''))
+       if(!d||!/^\\d{4}-\\d{2}-\\d{2}$/.test(d)||!/^\\d{2}:\\d{2}$/.test(t))continue
+       const emp=employees.find(x=>x.code===code)||employees.find(x=>x.name===name)
+       if(emp){code=emp.code;name=emp.name}
+       out.push({id:uid()+i,code,name:name||'غير معروف',date:d,time:t})
+     }
+     const unique=new Map<string,Punch>()
+     ;[...punches,...out].forEach(x=>unique.set(x.code+'|'+x.date+'|'+x.time,x))
+     setPunches(Array.from(unique.values()))
+     alert('تم استيراد '+out.length+' حركة بصمة بدون تكرار')
+   }catch(err){console.error(err);alert('تعذر قراءة ملف Excel. تأكد أن الصف الأول يحتوي عناوين الأعمدة.')}
+   e.target.value=''
+ }
+ const filteredDay=dayRows.filter(x=>(x.e.name+' '+x.e.code).toLowerCase().includes(q.toLowerCase()))
+ const exportDay=()=>downloadExcel(dayRows.map(x=>({الرقم:x.e.code,الاسم:x.e.name,التاريخ:date,أول_بصمة:x.first||'—',آخر_بصمة:x.last||'—',عدد_البصمات:x.count,الحالة:x.status,بصمة_واحدة:x.single?'نعم':'',التأخير:x.late?'متأخر':''})),'attendance-'+date+'.xlsx')
+ const exportMonthSummary=()=>downloadExcel(monthMatrix.map(x=>({الرقم:x.e.code,الاسم:x.e.name,أيام_العمل:x.workdays,حضور:x.present,غياب:x.absent,'بصمة_واحدة':x.single,إجازات:x.leaveDays,جمع:x.offDays,عطلات_رسمية:x.holidayDays})),'attendance-summary-'+month+'.xlsx')
+ const exportMatrix=()=>{
+   const rows=monthMatrix.map(x=>{
+     const row:any={الرقم:x.e.code,الاسم:x.e.name}
+     x.cells.forEach(cell=>row[cell.date]=cell.value+(cell.first?(' '+cell.first+(cell.last?' - '+cell.last:'')):''));return row
+   })
+   downloadExcel(rows,'attendance-matrix-'+month+'.xlsx')
+ }
  return <><PageActions title="الحضور والانصراف" text="استيراد البصمة وتحويل الحركات إلى حضور وغياب وأول وآخر بصمة" action="📥 استيراد Excel" onClick={()=>input.current?.click()}/><input ref={input} hidden type="file" accept=".xlsx,.xls,.csv" onChange={importFile}/>
- <div className="toolbar"><input placeholder="بحث بالاسم أو الكود..." value={q} onChange={e=>setQ(e.target.value)}/><label>اليوم <input type="date" value={date} onChange={e=>setDate(e.target.value)}/></label><button className="view-btn" onClick={exportDay}>تصدير اليوم</button><label>الشهر <input type="month" value={month} onChange={e=>setMonth(e.target.value)}/></label><button className="view-btn" onClick={exportMonth}>تصدير الشهر</button></div>
- <section className="panel table-panel"><TableWrap><table><thead><tr><th>الكود</th><th>الاسم</th><th>أول بصمة</th><th>آخر بصمة</th><th>عدد البصمات</th><th>الحالة</th><th>التأخير</th></tr></thead><tbody>{dayRows.filter(x=>(x.e.name+' '+x.e.code).includes(q)).map(x=><tr key={x.e.id}><td>{x.e.code}</td><td>{x.e.name}</td><td>{x.first||'—'}</td><td>{x.last||'—'}</td><td>{x.count}</td><td><span className={x.status==='حاضر'?'badge':'badge absent'}>{x.status}</span></td><td>{x.late?'متأخر':''}</td></tr>)}{!dayRows.length&&<EmptyRow col={7} text="لا يوجد موظفون."/>}</tbody></table></TableWrap></section></>
-}
+ <div className="toolbar"><input placeholder="بحث بالاسم أو الكود..." value={q} onChange={e=>setQ(e.target.value)}/><label>اليوم <input type="date" value={date} onChange={e=>setDate(e.target.value)}/></label><button className="view-btn" onClick={exportDay}>تصدير اليوم</button><label>الشهر <input type="month" value={month} onChange={e=>setMonth(e.target.value)}/></label><button className="view-btn" onClick={exportMonthSummary}>ملخص الشهر</button><button className="view-btn" onClick={exportMatrix}>مصفوفة الشهر</button></div>
+ <section className="panel table-panel"><TableWrap><table><thead><tr><th>الكود</th><th>الاسم</th><th>أول بصمة</th><th>آخر بصمة</th><th>البصمات</th><th>الحالة</th><th>التأخير</th></tr></thead><tbody>{filteredDay.length?filteredDay.map(x=><tr key={x.e.id}><td>{x.e.code}</td><td>{x.e.name}</td><td>{x.first||'—'}</td><td>{x.last||'—'}</td><td>{x.count}</td><td><span className={x.status==='غياب'?'badge absent':'badge'}>{x.status}</span></td><td>{x.late?'متأخر':''}</td></tr>):<EmptyRow col={7} text="لا توجد بيانات لهذا اليوم."/>}</tbody></table></TableWrap></section>
+ <section className="panel table-panel"><div className="panel-header"><div><h2>مصفوفة الحضور الشهرية</h2><p>كل موظف في صف، وكل يوم في عمود. تشمل الحضور والغياب والبصمة الواحدة والجمعة والعطلات والإجازات.</p></div></div><TableWrap><table className="monthly-matrix"><thead><tr><th>الرقم</th><th>الاسم</th>{monthDays.map(d=><th key={d}>{Number(d.slice(-2))}</th>)}</tr></thead><tbody>{monthMatrix.map(x=><tr key={x.e.id}><td>{x.e.code}</td><td><b>{x.e.name}</b></td>{x.cells.map(c=><td key={c.date} title={c.first?('أول: '+c.first+' | آخر: '+(c.last||'—')):c.value}>{c.value==='حاضر'?'✓':c.value==='بصمة واحدة'?'1':c.value==='غياب'?'غ':c.value==='إجازة'?'إ':c.value==='جمعة'?'ج':'ع'}</td>)}</tr>)}{!monthMatrix.length&&<EmptyRow col={monthDays.length+2} text="أضف الموظفين أولاً."/>}</tbody></table></TableWrap></section>
+ <section className="stats"><Stat icon="✓" label="حضور الشهر" value={monthMatrix.reduce((a,x)=>a+x.present,0)}/><Stat icon="✕" label="غياب الشهر" value={monthMatrix.reduce((a,x)=>a+x.absent,0)}/><Stat icon="1" label="بصمة واحدة" value={monthMatrix.reduce((a,x)=>a+x.single,0)}/><Stat icon="🏖️" label="إجازات معتمدة" value={monthMatrix.reduce((a,x)=>a+x.leaveDays,0)}/></section>
+ </>}
+
 function addMinutes(t:string,m:number){const [h,n]=t.split(':').map(Number);const z=h*60+n+m;return String(Math.floor(z/60)).padStart(2,'0')+':'+String(z%60).padStart(2,'0')}
 
 function Leaves({employees,rows,setRows}:{employees:Employee[];rows:Leave[];setRows:Dispatch<SetStateAction<Leave[]>>}){
