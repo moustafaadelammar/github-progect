@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
-import type { Dispatch, SetStateAction, ReactNode } from 'react'
+import type { Dispatch, SetStateAction, ReactNode, ChangeEvent } from 'react'
+import * as XLSX from 'xlsx'
 import './App.css'
 
 type Section = 'dashboard' | 'employees' | 'attendance' | 'leaves' | 'medical' | 'missions' | 'penalties' | 'reports' | 'settings'
@@ -27,10 +28,10 @@ function App() {
       {section==='dashboard'&&<Dashboard employees={employees} go={setSection}/>}
       {section==='employees'&&<Employees employees={employees} setEmployees={setEmployees}/>}
       {section==='medical'&&<Medical employees={employees}/>}
-      {section==='attendance'&&<Simple title="الحضور والانصراف" icon="🕘" text="هنا سيتم استيراد ملفات البصمة وإنشاء تقرير الحضور والغياب والتأخير."/>}
-      {section==='leaves'&&<Simple title="الإجازات" icon="🏖️" text="إدارة طلبات الإجازات والأرصدة والاعتمادات."/>}
-      {section==='missions'&&<Simple title="المأموريات" icon="📋" text="تسجيل المأموريات ومتابعة حالتها واعتمادها."/>}
-      {section==='penalties'&&<Simple title="الجزاءات" icon="⚠️" text="تسجيل الجزاءات والتنبيهات والقرارات الإدارية."/>}
+      {section==='attendance'&&<Attendance employees={employees}/>} 
+      {section==='leaves'&&<Module title="الإجازات" icon="🏖️" text="تسجيل ومتابعة طلبات الإجازات."/>}
+      {section==='missions'&&<Module title="المأموريات" icon="📋" text="تسجيل ومتابعة المأموريات."/>}
+      {section==='penalties'&&<Module title="الجزاءات" icon="⚠️" text="تسجيل الجزاءات والقرارات الإدارية."/>}
       {section==='reports'&&<Simple title="التقارير" icon="📊" text="مركز التقارير والتصدير إلى Excel وPDF."/>}
       {section==='settings'&&<Simple title="الإعدادات" icon="⚙️" text="إعدادات الشركة والأقسام والصلاحيات والنسخ الاحتياطي."/>}
     </main>
@@ -55,6 +56,48 @@ function Employees({employees,setEmployees}:{employees:Employee[];setEmployees:D
  <section className="panel table-panel"><table><thead><tr><th>الرقم الوظيفي</th><th>الاسم</th><th>القسم</th><th>الوظيفة</th><th>الهاتف</th><th>الحالة</th><th>إجراء</th></tr></thead><tbody>{filtered.length?filtered.map(e=><tr key={e.id}><td>{e.code}</td><td><b>{e.name}</b></td><td>{e.department}</td><td>{e.job}</td><td>{e.phone}</td><td><span className="badge">{e.status}</span></td><td><button className="danger-btn" onClick={()=>setEmployees(x=>x.filter(a=>a.id!==e.id))}>حذف</button></td></tr>):<tr><td colSpan={7}><div className="table-empty">لا توجد موظفين. ابدأ بإضافة أول موظف.</div></td></tr>}</tbody></table></section>
  {open&&<Modal title="إضافة موظف" close={()=>setOpen(false)}><div className="form-grid">{[['code','الرقم الوظيفي'],['name','اسم الموظف'],['department','القسم'],['job','الوظيفة'],['phone','رقم الهاتف']].map(([k,l])=><label key={k}>{l}<input value={form[k as keyof typeof form]} onChange={e=>setForm({...form,[k]:e.target.value})}/></label>)}</div><button className="primary-btn" onClick={save}>حفظ الموظف</button></Modal>}</>
 }
+
+function Attendance({employees}:{employees:Employee[]}){
+ const input=useRef<HTMLInputElement>(null)
+ const [rows,setRows]=useState<any[]>(()=>read('hr_attendance',[]))
+ const [date,setDate]=useState(new Date().toISOString().slice(0,10))
+ const [q,setQ]=useState('')
+ useEffect(()=>localStorage.setItem('hr_attendance',JSON.stringify(rows)),[rows])
+ const filtered=rows.filter(x=>x.date===date && (String(x.name||'')+' '+String(x.code||'')).includes(q))
+ const importFile=async(e:ChangeEvent<HTMLInputElement>)=>{
+  const f=e.target.files?.[0]; if(!f)return
+  try{
+   const wb=XLSX.read(await f.arrayBuffer(),{type:'array',cellDates:true})
+   const ws=wb.Sheets[wb.SheetNames[0]]
+   const raw=XLSX.utils.sheet_to_json<any[]>(ws,{header:1,defval:''})
+   const h=(raw[0]||[]).map(x=>String(x).trim().toLowerCase())
+   const idx=(a:string[])=>h.findIndex(x=>a.some(y=>x.includes(y)))
+   const ci=idx(['id','code','رقم','كود','employee']),ni=idx(['name','اسم'])
+   const di=idx(['date','تاريخ','datetime']),ti=idx(['time','وقت'])
+   const out:any[]=[]
+   for(let i=1;i<raw.length;i++){
+    const r=raw[i];if(!r||!r.length)continue
+    const code=String(r[ci>=0?ci:0]||'').trim()
+    const emp=employees.find(x=>x.code===code)
+    let d='',t=''
+    const dv=di>=0?r[di]:''; const tv=ti>=0?r[ti]:''
+    if(dv instanceof Date){d=dv.toISOString().slice(0,10);t=dv.toTimeString().slice(0,5)}
+    else{const parts=String(dv||'').trim().split(/[ T]+/);d=normalDate(parts[0]);if(parts[1])t=normalTime(parts[1])}
+    if(!t)t=tv instanceof Date?tv.toTimeString().slice(0,5):normalTime(String(tv||''))
+    if(!d)d=date
+    out.push({id:Date.now()+i,code,name:String(r[ni>=0?ni:1]||emp?.name||'غير معروف'),date:d,time:t,status:t>'08:30'?'متأخر':'حاضر'})
+   }
+   setRows(x=>[...x,...out]);alert('تم استيراد '+out.length+' سجل')
+  }catch(err){console.error(err);alert('تعذر قراءة ملف Excel')}
+  e.target.value=''
+ }
+ return <><div className="page-actions"><div><h2>الحضور والانصراف</h2><p>استيراد ملفات البصمة Excel وحساب الحضور والتأخير</p></div><button className="primary-btn" onClick={()=>input.current?.click()}>📥 استيراد Excel</button><input ref={input} hidden type="file" accept=".xlsx,.xls,.csv" onChange={importFile}/></div>
+ <div className="toolbar"><input placeholder="بحث بالاسم أو الكود..." value={q} onChange={e=>setQ(e.target.value)}/><label>التاريخ <input type="date" value={date} onChange={e=>setDate(e.target.value)}/></label><span>السجلات: <b>{filtered.length}</b></span></div>
+ <section className="panel table-panel"><div className="table-wrap"><table><thead><tr><th>الكود</th><th>الاسم</th><th>التاريخ</th><th>الوقت</th><th>الحالة</th></tr></thead><tbody>{filtered.length?filtered.map(x=><tr key={x.id}><td>{x.code}</td><td>{x.name}</td><td>{x.date}</td><td>{x.time}</td><td><span className={x.status==='متأخر'?'badge late':'badge'}>{x.status}</span></td></tr>):<tr><td colSpan={5}><div className="table-empty">لا توجد سجلات لهذا اليوم.</div></td></tr>}</tbody></table></div></section></>
+}
+function normalDate(s:string){if(/^\\d{4}-\\d{1,2}-\\d{1,2}$/.test(s))return s;const m=s.match(/^(\\d{1,2})[\\/-](\\d{1,2})[\\/-](\\d{2,4})$/);return m?(m[3].length===2?'20':'')+m[3]+'-'+m[2].padStart(2,'0')+'-'+m[1].padStart(2,'0'):s}
+function normalTime(s:string){const m=s.match(/(\\d{1,2}):(\\d{2})/);return m?m[1].padStart(2,'0')+':'+m[2]:'00:00'}
+function Module({title,icon,text}:{title:string;icon:string;text:string}){return <section className="panel placeholder"><div className="empty-icon">{icon}</div><h2>{title}</h2><p>{text}</p><button className="primary-btn">＋ إضافة جديد</button></section>}
 
 function Medical({employees}:{employees:Employee[]}){const [tab,setTab]=useState('overview');const tabs=[['overview','نظرة عامة'],['files','الملفات الطبية'],['exams','الفحوصات'],['sick','الإجازات المرضية'],['treatment','طلبات العلاج'],['insurance','التأمين']];return <div className="medical-page"><section className="medical-hero"><div><div className="medical-title">🏥 الخدمات الطبية</div><h2>إدارة الرعاية الطبية للموظفين</h2><p>كل البيانات محفوظة محلياً على جهازك.</p></div><button className="primary-btn">＋ إضافة طلب طبي</button></section><div className="medical-tabs">{tabs.map(x=><button className={tab===x[0]?'active':''} onClick={()=>setTab(x[0])} key={x[0]}>{x[1]}</button>)}</div>{tab==='overview'?<><section className="stats"><Stat icon="👤" label="الملفات الطبية" value={employees.length}/><Stat icon="🩺" label="الفحوصات المستحقة" value="0"/><Stat icon="📝" label="طلبات العلاج" value="0"/><Stat icon="🏖️" label="إجازات مرضية" value="0"/></section><section className="panel privacy-panel"><div className="privacy-icon">🔐</div><h2>خصوصية البيانات الطبية</h2><p>هذه البيانات حساسة، وسيتم لاحقاً إضافة مستخدمين وصلاحيات وتسجيل عمليات الوصول.</p></section></>:<section className="panel table-panel"><div className="panel-header"><div><h2>{tabs.find(x=>x[0]===tab)?.[1]}</h2><p>لا توجد بيانات مسجلة حالياً</p></div><button className="primary-btn">＋ إضافة جديد</button></div><table><thead><tr><th>الموظف</th><th>التاريخ</th><th>النوع</th><th>الحالة</th><th>إجراء</th></tr></thead><tbody><tr><td colSpan={5}><div className="table-empty">لا توجد بيانات لعرضها</div></td></tr></tbody></table></section>}</div>}
 
