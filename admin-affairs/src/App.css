@@ -565,3 +565,10 @@ tbody tr:hover{background:#f7fafb}
 @media(max-width:700px){
  .sidebar{width:82px}.main{width:calc(100% - 82px);margin-right:82px;padding:18px}
 }
+
+/* Final identity polish */
+.brand{min-height:68px}
+.brand-copy h2{color:#fff!important;font-weight:800!important;letter-spacing:-.2px}
+.brand-copy span{color:#d7e7ef!important;font-weight:600}
+.brand-copy small{color:#91d4bd!important;font-size:10px;display:block}
+.topbar p{font-weight:500;color:#687d8e}
