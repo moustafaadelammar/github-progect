@@ -497,3 +497,71 @@ td { border-top: 1px solid #eef2f7; padding: 20px 13px; text-align: right; }
 /* Functional modules */
 .toolbar label{display:flex;align-items:center;gap:7px;color:#64748b;font-size:12px;white-space:nowrap}.toolbar label input{flex:0 0 auto}.form-grid select,.form-grid textarea{display:block;width:100%;margin-top:6px;padding:10px;border:1px solid #dbe2ea;border-radius:8px;font-family:inherit;background:white}.form-grid textarea{min-height:90px;resize:vertical}.form-grid .full{grid-column:1/-1}.badge.absent{background:#ffecec;color:#dc2626}.muted{color:#718096;line-height:1.9}.report-actions{grid-template-columns:repeat(2,1fr);margin-top:20px}.settings-actions{display:flex;gap:10px;margin-top:20px}.settings-actions button{cursor:pointer}.view-btn{cursor:pointer}.danger-btn{cursor:pointer}
 @media(max-width:700px){.form-grid{grid-template-columns:1fr}.form-grid .full{grid-column:auto}.toolbar{flex-wrap:wrap}.toolbar input{min-width:150px}.report-actions{grid-template-columns:1fr}}
+
+
+/* Enterprise refresh */
+:root{
+  font-family:"Segoe UI",Tahoma,Arial,sans-serif;
+  color:#172033;
+  background:#f3f6f9;
+}
+body,.app{background:#f3f6f9}
+.sidebar{
+  background:linear-gradient(180deg,#102a43 0%,#163b5c 55%,#0f2940 100%);
+  width:286px;padding:24px 17px;
+  box-shadow:-8px 0 30px rgba(15,42,67,.08);
+}
+.brand{padding:5px 8px 28px;border-bottom:1px solid rgba(255,255,255,.1);margin-bottom:18px}
+.brand-logo,.brand-icon{
+  width:48px;height:48px;border-radius:14px;
+  background:linear-gradient(135deg,#19a974,#087f5b);
+  box-shadow:0 8px 18px rgba(25,169,116,.2);
+}
+.brand h2{font-size:16px;line-height:1.5}
+.brand span{color:#b9cddd}
+.sidebar nav{gap:5px}
+.sidebar nav button,nav a{transition:.2s ease}
+.sidebar nav button:hover,nav a:hover{background:rgba(255,255,255,.08);color:#fff;transform:translateX(-2px)}
+.sidebar nav button.active,nav a.active{background:linear-gradient(90deg,#159a70,#087f5b);box-shadow:0 7px 18px rgba(8,127,91,.25)}
+.avatar{background:#19a974}
+.main{width:calc(100% - 286px);margin-right:286px;padding:28px 34px 40px}
+.topbar{margin-bottom:24px}
+.topbar h1{font-size:29px;letter-spacing:-.4px}
+.topbar p{color:#718096}
+.notification{border:1px solid #dfe7ee;box-shadow:0 4px 14px rgba(15,23,42,.04)}
+.stats{gap:16px}
+.stat-card,.panel,.table-panel{
+  border:1px solid #e1e8ef;border-radius:16px;
+  box-shadow:0 6px 22px rgba(15,42,67,.045);
+}
+.stat-card{padding:18px 19px;position:relative;overflow:hidden}
+.stat-card:after{content:"";position:absolute;inset:auto 0 0 0;height:3px;background:#19a974}
+.stat-icon.blue{background:#e7f0f8}.stat-icon.green{background:#e5f7ef}
+.stat-icon.red{background:#fff0ef}.stat-icon.orange{background:#fff4df}
+.stat-card strong{color:#102a43}
+.panel{padding:21px}
+.primary-btn{
+  background:linear-gradient(135deg,#159a70,#087f5b);
+  box-shadow:0 6px 15px rgba(8,127,91,.18);
+  transition:.2s ease
+}
+.primary-btn:hover{transform:translateY(-1px);filter:brightness(1.03)}
+.view-btn{background:#e7f6f0;color:#087f5b}
+.actions button{transition:.2s ease;box-shadow:0 3px 12px rgba(15,42,67,.025)}
+.actions button:hover{border-color:#19a974;transform:translateY(-2px);box-shadow:0 8px 20px rgba(15,42,67,.07)}
+.toolbar{border-color:#dfe7ee;box-shadow:0 4px 16px rgba(15,42,67,.035)}
+.toolbar input,.form-grid input,.form-grid select,.form-grid textarea{border-color:#d7e1e9;outline:none;transition:.15s}
+.toolbar input:focus,.form-grid input:focus,.form-grid select:focus,.form-grid textarea:focus{border-color:#19a974;box-shadow:0 0 0 3px rgba(25,169,116,.10)}
+th{background:#f0f5f8;color:#536879}
+td{border-top-color:#e8eef3}
+tbody tr:hover{background:#f7fafb}
+.badge{background:#e6f7ef;color:#087f5b}
+.badge.absent{background:#fff0ef;color:#c2413d}
+.medical-hero{background:linear-gradient(135deg,#102a43,#087f5b);box-shadow:0 12px 28px rgba(15,42,67,.12)}
+.medical-tabs button.active{background:#e6f7ef;color:#087f5b}
+.modal{border:1px solid #e1e8ef;box-shadow:0 24px 70px rgba(15,42,67,.22)}
+.report-actions button{border-radius:10px}
+.danger-btn{transition:.15s}.danger-btn:hover{background:#ffe4e2}
+@media(max-width:700px){
+ .sidebar{width:82px}.main{width:calc(100% - 82px);margin-right:82px;padding:18px}
+}
