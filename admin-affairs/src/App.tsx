@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import type { Dispatch, SetStateAction, ReactNode } from 'react'
 import './App.css'
 
 type Section = 'dashboard' | 'employees' | 'attendance' | 'leaves' | 'medical' | 'missions' | 'penalties' | 'reports' | 'settings'
@@ -11,12 +12,11 @@ const menu: { id: Section; label: string; icon: string }[] = [
   { id:'penalties',label:'الجزاءات',icon:'⚠️' },{ id:'reports',label:'التقارير',icon:'📊' },
   { id:'settings',label:'الإعدادات',icon:'⚙️' },
 ]
-const seed: Employee[] = []
 
 function App() {
   const [section,setSection]=useState<Section>('dashboard')
-  const [employees,setEmployees]=useState<Employee[]>(()=>JSON.parse(localStorage.getItem('hr_employees')||'[]'))
-  useEffect(()=>localStorage.setItem('hr_employees',JSON.stringify(employees)),[employees])
+  const [employees,setEmployees]=useState<Employee[]>(()=>{ try { const raw=localStorage.getItem('hr_employees'); return raw ? JSON.parse(raw) : [] } catch { return [] } })
+  useEffect(()=>{ try { localStorage.setItem('hr_employees',JSON.stringify(employees)) } catch {} },[employees])
   const current=menu.find(x=>x.id===section)
   return <div className="app" dir="rtl">
     <aside className="sidebar"><div className="brand"><div className="brand-icon">HR</div><div><h2>الشئون الإدارية</h2><span>نظام إدارة الشركة</span></div></div>
@@ -46,7 +46,7 @@ function Dashboard({employees,go}:{employees:Employee[];go:(s:Section)=>void}){
 }
 function Stat({icon,label,value}:{icon:string;label:string;value:string|number}){return <div className="stat-card"><div className="stat-icon blue">{icon}</div><div><span>{label}</span><strong>{value}</strong></div></div>}
 
-function Employees({employees,setEmployees}:{employees:Employee[];setEmployees:React.Dispatch<React.SetStateAction<Employee[]>>}){
+function Employees({employees,setEmployees}:{employees:Employee[];setEmployees:Dispatch<SetStateAction<Employee[]>>}){
  const [open,setOpen]=useState(false),[q,setQ]=useState(''),[form,setForm]=useState({code:'',name:'',department:'',job:'',phone:''})
  const filtered=employees.filter(e=>(e.name+e.code+e.department).includes(q))
  function save(){if(!form.name.trim())return;setEmployees(x=>[...x,{...form,id:Date.now(),status:'على رأس العمل'}]);setForm({code:'',name:'',department:'',job:'',phone:''});setOpen(false)}
@@ -58,6 +58,6 @@ function Employees({employees,setEmployees}:{employees:Employee[];setEmployees:R
 
 function Medical({employees}:{employees:Employee[]}){const [tab,setTab]=useState('overview');const tabs=[['overview','نظرة عامة'],['files','الملفات الطبية'],['exams','الفحوصات'],['sick','الإجازات المرضية'],['treatment','طلبات العلاج'],['insurance','التأمين']];return <div className="medical-page"><section className="medical-hero"><div><div className="medical-title">🏥 الخدمات الطبية</div><h2>إدارة الرعاية الطبية للموظفين</h2><p>كل البيانات محفوظة محلياً على جهازك.</p></div><button className="primary-btn">＋ إضافة طلب طبي</button></section><div className="medical-tabs">{tabs.map(x=><button className={tab===x[0]?'active':''} onClick={()=>setTab(x[0])} key={x[0]}>{x[1]}</button>)}</div>{tab==='overview'?<><section className="stats"><Stat icon="👤" label="الملفات الطبية" value={employees.length}/><Stat icon="🩺" label="الفحوصات المستحقة" value="0"/><Stat icon="📝" label="طلبات العلاج" value="0"/><Stat icon="🏖️" label="إجازات مرضية" value="0"/></section><section className="panel privacy-panel"><div className="privacy-icon">🔐</div><h2>خصوصية البيانات الطبية</h2><p>هذه البيانات حساسة، وسيتم لاحقاً إضافة مستخدمين وصلاحيات وتسجيل عمليات الوصول.</p></section></>:<section className="panel table-panel"><div className="panel-header"><div><h2>{tabs.find(x=>x[0]===tab)?.[1]}</h2><p>لا توجد بيانات مسجلة حالياً</p></div><button className="primary-btn">＋ إضافة جديد</button></div><table><thead><tr><th>الموظف</th><th>التاريخ</th><th>النوع</th><th>الحالة</th><th>إجراء</th></tr></thead><tbody><tr><td colSpan={5}><div className="table-empty">لا توجد بيانات لعرضها</div></td></tr></tbody></table></section>}</div>}
 
-function Modal({title,close,children}:{title:string;close:()=>void;children:React.ReactNode}){return <div className="modal-backdrop"><div className="modal"><div className="modal-head"><h2>{title}</h2><button onClick={close}>×</button></div>{children}</div></div>}
+function Modal({title,close,children}:{title:string;close:()=>void;children:ReactNode}){return <div className="modal-backdrop"><div className="modal"><div className="modal-head"><h2>{title}</h2><button onClick={close}>×</button></div>{children}</div></div>}
 function Simple({title,icon,text}:{title:string;icon:string;text:string}){return <section className="panel placeholder"><div className="empty-icon">{icon}</div><h2>{title}</h2><p>{text}</p><span className="badge">يعمل محلياً — بدون قاعدة بيانات خارجية</span></section>}
 export default App
