@@ -1,237 +1,63 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import './App.css'
 
 type Section = 'dashboard' | 'employees' | 'attendance' | 'leaves' | 'medical' | 'missions' | 'penalties' | 'reports' | 'settings'
+type Employee = { id: number; code: string; name: string; department: string; job: string; phone: string; status: string }
 
 const menu: { id: Section; label: string; icon: string }[] = [
-  { id: 'dashboard', label: 'الرئيسية', icon: '🏠' },
-  { id: 'employees', label: 'الموظفين', icon: '👥' },
-  { id: 'attendance', label: 'الحضور والانصراف', icon: '🕘' },
-  { id: 'leaves', label: 'الإجازات', icon: '🏖️' },
-  { id: 'medical', label: 'الخدمات الطبية', icon: '🏥' },
-  { id: 'missions', label: 'المأموريات', icon: '📋' },
-  { id: 'penalties', label: 'الجزاءات', icon: '⚠️' },
-  { id: 'reports', label: 'التقارير', icon: '📊' },
-  { id: 'settings', label: 'الإعدادات', icon: '⚙️' },
+  { id:'dashboard',label:'الرئيسية',icon:'🏠' },{ id:'employees',label:'الموظفين',icon:'👥' },
+  { id:'attendance',label:'الحضور والانصراف',icon:'🕘' },{ id:'leaves',label:'الإجازات',icon:'🏖️' },
+  { id:'medical',label:'الخدمات الطبية',icon:'🏥' },{ id:'missions',label:'المأموريات',icon:'📋' },
+  { id:'penalties',label:'الجزاءات',icon:'⚠️' },{ id:'reports',label:'التقارير',icon:'📊' },
+  { id:'settings',label:'الإعدادات',icon:'⚙️' },
 ]
+const seed: Employee[] = []
 
 function App() {
-  const [section, setSection] = useState<Section>('dashboard')
-
-  const current = menu.find((item) => item.id === section)
-
-  return (
-    <div className="app" dir="rtl">
-      <aside className="sidebar">
-        <div className="brand">
-          <div className="brand-icon">HR</div>
-          <div>
-            <h2>الشئون الإدارية</h2>
-            <span>نظام إدارة الشركة</span>
-          </div>
-        </div>
-
-        <nav>
-          {menu.map((item) => (
-            <button
-              key={item.id}
-              className={section === item.id ? 'active' : ''}
-              onClick={() => setSection(item.id)}
-            >
-              <span>{item.icon}</span>
-              {item.label}
-            </button>
-          ))}
-        </nav>
-
-        <div className="user-box">
-          <div className="avatar">م</div>
-          <div>
-            <strong>مسؤول النظام</strong>
-            <span>Administrator</span>
-          </div>
-        </div>
-      </aside>
-
-      <main className="main">
-        <header className="topbar">
-          <div>
-            <h1>{current?.label}</h1>
-            <p>{section === 'medical' ? 'إدارة الملفات والخدمات الطبية للموظفين' : 'مرحباً بك في نظام الشئون الإدارية'}</p>
-          </div>
-          <div className="top-actions">
-            <button className="notification">🔔</button>
-            <div className="date">السبت، 26 سبتمبر 2026</div>
-          </div>
-        </header>
-
-        {section === 'dashboard' && <Dashboard onMedical={() => setSection('medical')} />}
-        {section === 'medical' && <MedicalServices />}
-        {section !== 'dashboard' && section !== 'medical' && <Placeholder title={current?.label ?? ''} />}
-      </main>
-    </div>
-  )
+  const [section,setSection]=useState<Section>('dashboard')
+  const [employees,setEmployees]=useState<Employee[]>(()=>JSON.parse(localStorage.getItem('hr_employees')||'[]'))
+  useEffect(()=>localStorage.setItem('hr_employees',JSON.stringify(employees)),[employees])
+  const current=menu.find(x=>x.id===section)
+  return <div className="app" dir="rtl">
+    <aside className="sidebar"><div className="brand"><div className="brand-icon">HR</div><div><h2>الشئون الإدارية</h2><span>نظام إدارة الشركة</span></div></div>
+      <nav>{menu.map(x=><button key={x.id} className={section===x.id?'active':''} onClick={()=>setSection(x.id)}><span>{x.icon}</span>{x.label}</button>)}</nav>
+      <div className="user-box"><div className="avatar">م</div><div><strong>مسؤول النظام</strong><span>Administrator</span></div></div>
+    </aside>
+    <main className="main"><header className="topbar"><div><h1>{current?.label}</h1><p>نظام مستقل يعمل محلياً ويحفظ البيانات على هذا الجهاز</p></div><div className="top-actions"><button className="notification">🔔</button><div className="date">السبت، 26 سبتمبر 2026</div></div></header>
+      {section==='dashboard'&&<Dashboard employees={employees} go={setSection}/>}
+      {section==='employees'&&<Employees employees={employees} setEmployees={setEmployees}/>}
+      {section==='medical'&&<Medical employees={employees}/>}
+      {section==='attendance'&&<Simple title="الحضور والانصراف" icon="🕘" text="هنا سيتم استيراد ملفات البصمة وإنشاء تقرير الحضور والغياب والتأخير."/>}
+      {section==='leaves'&&<Simple title="الإجازات" icon="🏖️" text="إدارة طلبات الإجازات والأرصدة والاعتمادات."/>}
+      {section==='missions'&&<Simple title="المأموريات" icon="📋" text="تسجيل المأموريات ومتابعة حالتها واعتمادها."/>}
+      {section==='penalties'&&<Simple title="الجزاءات" icon="⚠️" text="تسجيل الجزاءات والتنبيهات والقرارات الإدارية."/>}
+      {section==='reports'&&<Simple title="التقارير" icon="📊" text="مركز التقارير والتصدير إلى Excel وPDF."/>}
+      {section==='settings'&&<Simple title="الإعدادات" icon="⚙️" text="إعدادات الشركة والأقسام والصلاحيات والنسخ الاحتياطي."/>}
+    </main>
+  </div>
 }
 
-function Dashboard({ onMedical }: { onMedical: () => void }) {
-  return (
-    <>
-      <section className="stats">
-        {[
-          ['👥', 'إجمالي الموظفين', '0', 'blue'],
-          ['✓', 'الحضور اليوم', '0', 'green'],
-          ['✕', 'الغياب اليوم', '0', 'red'],
-          ['⏰', 'المتأخرون', '0', 'orange'],
-        ].map(([icon, label, value, color]) => (
-          <div className="stat-card" key={label}>
-            <div className={`stat-icon ${color}`}>{icon}</div>
-            <div><span>{label}</span><strong>{value}</strong></div>
-          </div>
-        ))}
-      </section>
+function Dashboard({employees,go}:{employees:Employee[];go:(s:Section)=>void}){
+ return <><section className="stats">
+  <Stat icon="👥" label="إجمالي الموظفين" value={employees.length}/><Stat icon="✓" label="الحضور اليوم" value="0"/><Stat icon="✕" label="الغياب اليوم" value="0"/><Stat icon="⏰" label="المتأخرون" value="0"/>
+ </section><section className="content-grid"><div className="panel"><div className="panel-header"><div><h2>الحضور والانصراف اليوم</h2><p>ملخص حركة الموظفين</p></div></div><div className="empty-state"><div className="empty-icon">🕘</div><h3>لا توجد بيانات حضور</h3><p>قسم الحضور جاهز لاستيراد ملفات البصمة.</p><button className="primary-btn" onClick={()=>go('attendance')}>فتح الحضور</button></div></div>
+ <div className="panel"><div className="panel-header"><div><h2>الخدمات الطبية</h2><p>ملفات الموظفين والخدمات العلاجية</p></div></div><div className="medical-mini"><div><span>الموظفون</span><strong>{employees.length}</strong></div><div><span>طلبات العلاج</span><strong>0</strong></div><div><span>إجازات مرضية</span><strong>0</strong></div></div><button className="primary-btn" onClick={()=>go('medical')}>فتح الخدمات الطبية</button></div></section>
+ <section className="quick-actions"><h2>إجراءات سريعة</h2><div className="actions"><button onClick={()=>go('employees')}><span>➕</span>إضافة موظف</button><button onClick={()=>go('attendance')}><span>📥</span>استيراد البصمة</button><button onClick={()=>go('leaves')}><span>🏖️</span>تسجيل إجازة</button><button onClick={()=>go('medical')}><span>🏥</span>خدمة طبية</button></div></section></>
+}
+function Stat({icon,label,value}:{icon:string;label:string;value:string|number}){return <div className="stat-card"><div className="stat-icon blue">{icon}</div><div><span>{label}</span><strong>{value}</strong></div></div>}
 
-      <section className="content-grid">
-        <div className="panel">
-          <div className="panel-header">
-            <div><h2>الحضور والانصراف اليوم</h2><p>ملخص حركة الموظفين</p></div>
-            <button className="view-btn">عرض التفاصيل</button>
-          </div>
-          <div className="empty-state">
-            <div className="empty-icon">🕘</div>
-            <h3>لا توجد بيانات حضور</h3>
-            <p>قم بإضافة بيانات الموظفين أو استيراد ملف البصمة.</p>
-            <button className="primary-btn">استيراد ملف البصمة</button>
-          </div>
-        </div>
-
-        <div className="panel">
-          <div className="panel-header">
-            <div><h2>الخدمات الطبية</h2><p>متابعة الحالة الطبية وطلبات العلاج</p></div>
-            <button className="view-btn" onClick={onMedical}>فتح القسم</button>
-          </div>
-          <div className="medical-mini">
-            <div><span>ملفات طبية</span><strong>0</strong></div>
-            <div><span>طلبات علاج</span><strong>0</strong></div>
-            <div><span>إجازات مرضية</span><strong>0</strong></div>
-          </div>
-        </div>
-      </section>
-
-      <section className="quick-actions">
-        <h2>إجراءات سريعة</h2>
-        <div className="actions">
-          <button><span>➕</span>إضافة موظف</button>
-          <button><span>📥</span>استيراد البصمة</button>
-          <button><span>🏖️</span>تسجيل إجازة</button>
-          <button onClick={onMedical}><span>🏥</span>الخدمات الطبية</button>
-        </div>
-      </section>
-    </>
-  )
+function Employees({employees,setEmployees}:{employees:Employee[];setEmployees:React.Dispatch<React.SetStateAction<Employee[]>>}){
+ const [open,setOpen]=useState(false),[q,setQ]=useState(''),[form,setForm]=useState({code:'',name:'',department:'',job:'',phone:''})
+ const filtered=employees.filter(e=>(e.name+e.code+e.department).includes(q))
+ function save(){if(!form.name.trim())return;setEmployees(x=>[...x,{...form,id:Date.now(),status:'على رأس العمل'}]);setForm({code:'',name:'',department:'',job:'',phone:''});setOpen(false)}
+ return <><div className="page-actions"><div><h2>الموظفين</h2><p>قاعدة بيانات الموظفين المحلية</p></div><button className="primary-btn" onClick={()=>setOpen(true)}>＋ إضافة موظف</button></div>
+ <div className="toolbar"><input placeholder="بحث بالاسم أو الرقم أو القسم..." value={q} onChange={e=>setQ(e.target.value)}/><span>عدد الموظفين: <b>{employees.length}</b></span></div>
+ <section className="panel table-panel"><table><thead><tr><th>الرقم الوظيفي</th><th>الاسم</th><th>القسم</th><th>الوظيفة</th><th>الهاتف</th><th>الحالة</th><th>إجراء</th></tr></thead><tbody>{filtered.length?filtered.map(e=><tr key={e.id}><td>{e.code}</td><td><b>{e.name}</b></td><td>{e.department}</td><td>{e.job}</td><td>{e.phone}</td><td><span className="badge">{e.status}</span></td><td><button className="danger-btn" onClick={()=>setEmployees(x=>x.filter(a=>a.id!==e.id))}>حذف</button></td></tr>):<tr><td colSpan={7}><div className="table-empty">لا توجد موظفين. ابدأ بإضافة أول موظف.</div></td></tr>}</tbody></table></section>
+ {open&&<Modal title="إضافة موظف" close={()=>setOpen(false)}><div className="form-grid">{[['code','الرقم الوظيفي'],['name','اسم الموظف'],['department','القسم'],['job','الوظيفة'],['phone','رقم الهاتف']].map(([k,l])=><label key={k}>{l}<input value={form[k as keyof typeof form]} onChange={e=>setForm({...form,[k]:e.target.value})}/></label>)}</div><button className="primary-btn" onClick={save}>حفظ الموظف</button></Modal>}</>
 }
 
-function MedicalServices() {
-  const [tab, setTab] = useState('overview')
-  const tabs = [
-    ['overview', 'نظرة عامة'],
-    ['files', 'الملفات الطبية'],
-    ['exams', 'الفحوصات الطبية'],
-    ['sick', 'الإجازات المرضية'],
-    ['treatment', 'طلبات العلاج'],
-    ['insurance', 'التأمين الطبي'],
-    ['providers', 'المستشفيات والجهات الطبية'],
-    ['reports', 'التقارير الطبية'],
-  ]
+function Medical({employees}:{employees:Employee[]}){const [tab,setTab]=useState('overview');const tabs=[['overview','نظرة عامة'],['files','الملفات الطبية'],['exams','الفحوصات'],['sick','الإجازات المرضية'],['treatment','طلبات العلاج'],['insurance','التأمين']];return <div className="medical-page"><section className="medical-hero"><div><div className="medical-title">🏥 الخدمات الطبية</div><h2>إدارة الرعاية الطبية للموظفين</h2><p>كل البيانات محفوظة محلياً على جهازك.</p></div><button className="primary-btn">＋ إضافة طلب طبي</button></section><div className="medical-tabs">{tabs.map(x=><button className={tab===x[0]?'active':''} onClick={()=>setTab(x[0])} key={x[0]}>{x[1]}</button>)}</div>{tab==='overview'?<><section className="stats"><Stat icon="👤" label="الملفات الطبية" value={employees.length}/><Stat icon="🩺" label="الفحوصات المستحقة" value="0"/><Stat icon="📝" label="طلبات العلاج" value="0"/><Stat icon="🏖️" label="إجازات مرضية" value="0"/></section><section className="panel privacy-panel"><div className="privacy-icon">🔐</div><h2>خصوصية البيانات الطبية</h2><p>هذه البيانات حساسة، وسيتم لاحقاً إضافة مستخدمين وصلاحيات وتسجيل عمليات الوصول.</p></section></>:<section className="panel table-panel"><div className="panel-header"><div><h2>{tabs.find(x=>x[0]===tab)?.[1]}</h2><p>لا توجد بيانات مسجلة حالياً</p></div><button className="primary-btn">＋ إضافة جديد</button></div><table><thead><tr><th>الموظف</th><th>التاريخ</th><th>النوع</th><th>الحالة</th><th>إجراء</th></tr></thead><tbody><tr><td colSpan={5}><div className="table-empty">لا توجد بيانات لعرضها</div></td></tr></tbody></table></section>}</div>}
 
-  return (
-    <div className="medical-page">
-      <section className="medical-hero">
-        <div>
-          <div className="medical-title">🏥 الخدمات الطبية</div>
-          <h2>إدارة الرعاية الطبية للموظفين</h2>
-          <p>ملفات طبية، فحوصات، إجازات مرضية، علاج وتأمين في مكان واحد.</p>
-        </div>
-        <button className="primary-btn">＋ إضافة طلب طبي</button>
-      </section>
-
-      <div className="medical-tabs">
-        {tabs.map(([id, label]) => (
-          <button key={id} className={tab === id ? 'active' : ''} onClick={() => setTab(id)}>{label}</button>
-        ))}
-      </div>
-
-      {tab === 'overview' && <MedicalOverview />}
-      {tab === 'files' && <MedicalTable title="الملفات الطبية" columns={['الموظف', 'الرقم الوظيفي', 'آخر فحص', 'الحالة', 'إجراءات']} />}
-      {tab === 'exams' && <MedicalTable title="الفحوصات الطبية" columns={['الموظف', 'نوع الفحص', 'التاريخ', 'النتيجة', 'الحالة']} />}
-      {tab === 'sick' && <MedicalTable title="الإجازات المرضية" columns={['الموظف', 'من', 'إلى', 'المدة', 'الاعتماد']} />}
-      {tab === 'treatment' && <MedicalTable title="طلبات العلاج" columns={['الموظف', 'نوع الطلب', 'الجهة الطبية', 'التكلفة', 'الحالة']} />}
-      {tab === 'insurance' && <MedicalTable title="التأمين الطبي" columns={['الموظف', 'شركة التأمين', 'رقم الوثيقة', 'البداية', 'النهاية']} />}
-      {tab === 'providers' && <MedicalTable title="المستشفيات والجهات الطبية" columns={['الجهة', 'النوع', 'الهاتف', 'العنوان', 'الحالة']} />}
-      {tab === 'reports' && <MedicalTable title="التقارير الطبية" columns={['التقرير', 'الفترة', 'تاريخ الإنشاء', 'أنشأه', 'إجراء']} />}
-    </div>
-  )
-}
-
-function MedicalOverview() {
-  const cards = [
-    ['👤', 'الملفات الطبية', '0', 'blue'],
-    ['🩺', 'الفحوصات المستحقة', '0', 'green'],
-    ['📝', 'طلبات العلاج', '0', 'orange'],
-    ['🏖️', 'إجازات مرضية نشطة', '0', 'red'],
-  ]
-
-  return (
-    <>
-      <section className="stats medical-stats">
-        {cards.map(([icon, label, value, color]) => (
-          <div className="stat-card" key={label}>
-            <div className={`stat-icon ${color}`}>{icon}</div>
-            <div><span>{label}</span><strong>{value}</strong></div>
-          </div>
-        ))}
-      </section>
-
-      <section className="medical-grid">
-        <div className="panel">
-          <div className="panel-header"><div><h2>آخر الطلبات الطبية</h2><p>طلبات تحتاج متابعة أو اعتماد</p></div><button className="view-btn">عرض الكل</button></div>
-          <div className="empty-state small"><div className="empty-icon">🩺</div><h3>لا توجد طلبات حالياً</h3><p>ستظهر هنا طلبات العلاج والفحوصات الجديدة.</p></div>
-        </div>
-        <div className="panel privacy-panel">
-          <div className="privacy-icon">🔐</div>
-          <h2>خصوصية البيانات الطبية</h2>
-          <p>البيانات الطبية حساسة. يجب تقييد الوصول إليها حسب الصلاحيات مع تسجيل عمليات العرض والتعديل.</p>
-          <button className="view-btn">إدارة الصلاحيات</button>
-        </div>
-      </section>
-    </>
-  )
-}
-
-function MedicalTable({ title, columns }: { title: string; columns: string[] }) {
-  return (
-    <section className="panel table-panel">
-      <div className="panel-header">
-        <div><h2>{title}</h2><p>لا توجد بيانات مسجلة حالياً</p></div>
-        <button className="primary-btn">＋ إضافة جديد</button>
-      </div>
-      <div className="table-wrap">
-        <table>
-          <thead><tr>{columns.map((column) => <th key={column}>{column}</th>)}</tr></thead>
-          <tbody><tr><td colSpan={columns.length}><div className="table-empty">لا توجد بيانات لعرضها</div></td></tr></tbody>
-        </table>
-      </div>
-    </section>
-  )
-}
-
-function Placeholder({ title }: { title: string }) {
-  return (
-    <section className="panel placeholder">
-      <div className="empty-icon">🚧</div>
-      <h2>قسم {title}</h2>
-      <p>القسم جاهز للربط بقاعدة البيانات والوظائف الفعلية في المرحلة التالية.</p>
-    </section>
-  )
-}
-
+function Modal({title,close,children}:{title:string;close:()=>void;children:React.ReactNode}){return <div className="modal-backdrop"><div className="modal"><div className="modal-head"><h2>{title}</h2><button onClick={close}>×</button></div>{children}</div></div>}
+function Simple({title,icon,text}:{title:string;icon:string;text:string}){return <section className="panel placeholder"><div className="empty-icon">{icon}</div><h2>{title}</h2><p>{text}</p><span className="badge">يعمل محلياً — بدون قاعدة بيانات خارجية</span></section>}
 export default App
