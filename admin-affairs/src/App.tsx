@@ -40,11 +40,11 @@ function App(){
  useEffect(()=>localStorage.setItem('hr_settings',JSON.stringify(settings)),[settings])
  const current=menu.find(x=>x.id===section)
  return <div className="app" dir="rtl">
-  <aside className="sidebar"><div className="brand"><div className="brand-icon">HR</div><div><h2>الشئون الإدارية</h2><span>نظام إدارة الشركة</span></div></div>
+  <aside className="sidebar"><div className="brand"><div className="brand-logo">⚡</div><div><h2>مصر الوسطى لتوزيع الكهرباء</h2><span>قطاع كهرباء بني سويف — هندسة كهرباء أهناسيا</span></div></div>
    <nav>{menu.map(x=><button key={x.id} className={section===x.id?'active':''} onClick={()=>setSection(x.id)}><span>{x.icon}</span>{x.label}</button>)}</nav>
    <div className="user-box"><div className="avatar">م</div><div><strong>مسؤول النظام</strong><span>Administrator</span></div></div>
   </aside>
-  <main className="main"><header className="topbar"><div><h1>{current?.label}</h1><p>نظام مستقل يعمل محلياً ويحفظ البيانات على هذا الجهاز</p></div><div className="top-actions"><div className="date">{new Date().toLocaleDateString('ar-EG',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</div></div></header>
+  <main className="main"><header className="topbar"><div><h1>{current?.label}</h1><p>شركة مصر الوسطى لتوزيع الكهرباء — قطاع كهرباء بني سويف — هندسة كهرباء أهناسيا</p></div><div className="top-actions"><div className="date">{new Date().toLocaleDateString('ar-EG',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</div></div></header>
    {section==='dashboard'&&<Dashboard employees={employees} punches={punches} leaves={leaves} go={setSection}/>}
    {section==='employees'&&<Employees employees={employees} setEmployees={setEmployees}/>}
    {section==='attendance'&&<Attendance employees={employees} punches={punches} setPunches={setPunches} settings={settings} leaves={leaves}/>} 
