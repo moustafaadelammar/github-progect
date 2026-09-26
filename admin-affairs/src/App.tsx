@@ -40,7 +40,7 @@ function App(){
  useEffect(()=>localStorage.setItem('hr_settings',JSON.stringify(settings)),[settings])
  const current=menu.find(x=>x.id===section)
  return <div className="app" dir="rtl">
-  <aside className="sidebar"><div className="brand"><div className="brand-logo">ك</div><div className="brand-copy"><h2>مصر الوسطى لتوزيع الكهرباء</h2><span>قطاع كهرباء بني سويف</span><small>هندسة كهرباء أهناسيا</small></div></div>
+  <aside className="sidebar"><div className="brand"><div className="brand-logo">ك</div><div className="brand-copy"><h2>شركة توزيع الكهرباء</h2><span>قطاع كهرباء بني سويف</span><small>هندسة كهرباء أهناسيا</small></div></div>
    <nav>{menu.map(x=><button key={x.id} className={section===x.id?'active':''} onClick={()=>setSection(x.id)}><span>{x.icon}</span>{x.label}</button>)}</nav>
    <div className="user-box"><div className="avatar">م</div><div><strong>مسؤول النظام</strong><span>Administrator</span></div></div>
   </aside>
