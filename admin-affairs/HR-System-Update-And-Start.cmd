@@ -1,24 +1,27 @@
 @echo off
 setlocal EnableExtensions
-cd /d "%~dp0"
+title HR System - One Click Update and Start
 
-title HR System - Update and Start
+set "REPO_URL=https://github.com/moustafaadelammar/github-progect.git"
+set "ROOT=C:\HR-System"
+set "REPO=%ROOT%\github-progect"
+set "APP=%REPO%\admin-affairs"
 
 echo ==========================================
-echo       HR SYSTEM - UPDATE AND START
+echo      HR SYSTEM - UPDATE AND START
 echo ==========================================
 echo.
 
 where git >nul 2>&1
 if errorlevel 1 (
-  echo [ERROR] Git is not installed or not in PATH.
+  echo [ERROR] Git is not installed.
   pause
   exit /b 1
 )
 
 where node >nul 2>&1
 if errorlevel 1 (
-  echo [ERROR] Node.js is not installed or not in PATH.
+  echo [ERROR] Node.js is not installed.
   pause
   exit /b 1
 )
@@ -30,36 +33,41 @@ if errorlevel 1 (
   exit /b 1
 )
 
-echo [1/7] Getting latest code from GitHub...
-git fetch origin
-if errorlevel 1 (
-  echo [ERROR] GitHub update failed. Check Internet connection.
-  pause
-  exit /b 1
-)
+echo [1/8] Preparing project folder...
+if not exist "%ROOT%" mkdir "%ROOT%"
 
-git rev-parse --verify origin/main >nul 2>&1
-if errorlevel 1 (
-  echo [ERROR] origin/main was not found.
-  pause
-  exit /b 1
-)
-
-echo [2/7] Protecting any local code changes...
-git status --porcelain > "%TEMP%\hr_git_status.txt"
-for %%A in ("%TEMP%\hr_git_status.txt") do if %%~zA GTR 0 (
-  echo Local changes found. Saving them automatically in a backup stash...
-  git stash push -u -m "HR System automatic backup before update"
+if not exist "%REPO%\.git" (
+  echo No local Git copy found.
+  echo Cloning the project from GitHub...
+  if exist "%REPO%" rmdir /s /q "%REPO%"
+  git clone "%REPO_URL%" "%REPO%"
   if errorlevel 1 (
-    echo [ERROR] Could not protect local changes.
-    del "%TEMP%\hr_git_status.txt" >nul 2>&1
+    echo [ERROR] Could not clone the project.
     pause
     exit /b 1
   )
+) else (
+  echo [OK] Existing Git repository found.
+)
+
+cd /d "%REPO%"
+
+echo [2/8] Getting latest code...
+git fetch origin
+if errorlevel 1 (
+  echo [ERROR] Could not get the latest GitHub version.
+  pause
+  exit /b 1
+)
+
+echo [3/8] Saving local code changes...
+git status --porcelain > "%TEMP%\hr_git_status.txt"
+for %%A in ("%TEMP%\hr_git_status.txt") do if %%~zA GTR 0 (
+  git stash push -u -m "HR System automatic backup before update" >nul
 )
 del "%TEMP%\hr_git_status.txt" >nul 2>&1
 
-echo [3/7] Updating local project to latest main...
+echo [4/8] Updating to latest main...
 git reset --hard origin/main
 if errorlevel 1 (
   echo [ERROR] Could not update the project.
@@ -67,28 +75,26 @@ if errorlevel 1 (
   exit /b 1
 )
 
-git clean -fd -e node_modules -e logs
-if errorlevel 1 (
-  echo [WARNING] Some old untracked files could not be removed.
-)
+git clean -fd -e node_modules -e logs >nul 2>&1
 
-echo [4/7] Installing/updating dependencies...
+cd /d "%APP%"
+
+echo [5/8] Installing dependencies...
 call npm install
 if errorlevel 1 (
   echo [ERROR] npm install failed.
-  echo The current source code is updated, but dependencies need attention.
   pause
   exit /b 1
 )
 
-echo [5/7] Rebuilding the local startup launcher...
+if not exist "logs" mkdir logs
+
+echo [6/8] Creating Windows startup launcher...
 set "NODE_EXE="
-for /f "delims=" %%N in ('where node 2^>nul') do (
-  if not defined NODE_EXE set "NODE_EXE=%%N"
-)
+for /f "delims=" %%N in ('where node 2^>nul') do if not defined NODE_EXE set "NODE_EXE=%%N"
 
 if not defined NODE_EXE (
-  echo [ERROR] Could not resolve node.exe.
+  echo [ERROR] node.exe could not be found.
   pause
   exit /b 1
 )
@@ -99,54 +105,46 @@ echo setlocal EnableExtensions
 echo cd /d "%%~dp0"
 echo start "" /b "%NODE_EXE%" scripts\start-local.mjs
 echo exit /b 0
-) > "start-hr-system.cmd"
+) > "%APP%\start-hr-system.cmd"
 
-if errorlevel 1 (
-  echo [ERROR] Could not create start-hr-system.cmd.
-  pause
-  exit /b 1
-)
-
-echo [6/7] Creating/updating Windows startup task...
+echo [7/8] Creating Windows automatic startup...
 schtasks /Delete /TN "HR System Offline" /F >nul 2>&1
-schtasks /Create /TN "HR System Offline" /SC ONLOGON /TR "\"%CD%\start-hr-system.cmd\"" /F
+schtasks /Create /TN "HR System Offline" /SC ONLOGON /TR "\"%APP%\start-hr-system.cmd\"" /F >nul
 if errorlevel 1 (
-  echo [ERROR] Could not create the Windows startup task.
-  echo Try running this file once as Administrator.
-  pause
-  exit /b 1
+  echo [WARNING] Startup task could not be created.
+  echo Run this file once as Administrator.
 )
 
-echo [7/7] Starting services...
-call "%CD%\start-hr-system.cmd"
+echo Starting HR System...
+call "%APP%\start-hr-system.cmd"
 
-echo.
-echo Waiting for services...
+echo [8/8] Checking services...
 timeout /t 6 /nobreak >nul
 
-powershell -NoProfile -Command "$c=Get-NetTCPConnection -LocalPort 5173 -State Listen -ErrorAction SilentlyContinue; if($c){exit 0}else{exit 1}"
+powershell -NoProfile -Command "$x=Get-NetTCPConnection -LocalPort 5173 -State Listen -ErrorAction SilentlyContinue; if($x){exit 0}else{exit 1}"
 if errorlevel 1 (
-  echo [WARNING] HR System is not listening on port 5173.
-  echo Check logs\vite.log
+  echo [WARNING] HR System is not listening on 5173.
+  echo Check: %APP%\logs\vite.log
 ) else (
   echo [OK] HR System: http://localhost:5173
 )
 
-powershell -NoProfile -Command "$c=Get-NetTCPConnection -LocalPort 8787 -State Listen -ErrorAction SilentlyContinue; if($c){exit 0}else{exit 1}"
+powershell -NoProfile -Command "$x=Get-NetTCPConnection -LocalPort 8787 -State Listen -ErrorAction SilentlyContinue; if($x){exit 0}else{exit 1}"
 if errorlevel 1 (
-  echo [WARNING] Fingerprint Gateway is not listening on port 8787.
-  echo Check logs\fingerprint-gateway.log
+  echo [WARNING] Fingerprint Gateway is not listening on 8787.
+  echo Check: %APP%\logs\fingerprint-gateway.log
 ) else (
   echo [OK] Fingerprint Gateway: http://127.0.0.1:8787
 )
 
 echo.
+echo Opening HR System...
+start "" http://localhost:5173
+
+echo.
 echo ==========================================
-echo UPDATE + START COMPLETE
+echo          HR SYSTEM IS READY
 echo ==========================================
 echo.
-echo Future Windows logins will start the system automatically.
-echo GitHub remains the source of code updates.
-echo Local HR data is kept in the browser/local storage.
-echo.
-pause
+timeout /t 3 /nobreak >nul
+exit /b 0
