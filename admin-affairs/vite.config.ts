@@ -1,17 +1,16 @@
 import react from '@vitejs/plugin-react'
-import { defineConfig, transformWithOxc } from 'vite'
+import { defineConfig } from 'vite'
 
-const forceTsxTransform = () => ({
-  name: 'force-tsx-transform',
-  enforce: 'pre' as const,
-  async transform(code: string, id: string) {
-    if (!id.endsWith('/src/App.tsx')) return null
-    return await transformWithOxc(code, id, { lang: 'tsx' })
-  },
-})
-
-// https://vite.dev/config/
+// Vite 8 uses Oxc for TS/TSX transforms. Let the React plugin handle App.tsx
+// instead of forcing a second pre-transform on the same file.
 export default defineConfig({
-  plugins: [forceTsxTransform(), react()],
-  server: { proxy: { '/api': 'http://localhost:8787' } },
+  oxc: {
+    jsx: {
+      runtime: 'automatic',
+    },
+  },
+  plugins: [react()],
+  server: {
+    proxy: { '/api': 'http://localhost:8787' },
+  },
 })
