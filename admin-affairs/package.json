@@ -9,7 +9,8 @@
     "prebuild": "node scripts/upgrade-medical.mjs",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "fingerprint-gateway": "node scripts/fingerprint-gateway.mjs"
   },
   "dependencies": {
     "react": "^19.2.8",
