@@ -17,7 +17,7 @@ if errorlevel 1 (
 
 echo.
 echo Creating Windows startup task...
-schtasks /Create /TN "HR System Offline" /SC ONLOGON /TR "\"%CD%\start-hr-system.cmd\"" /F >nul
+schtasks /Create /TN "HR System Offline" /SC ONLOGON /TR "%CD%\start-hr-system.cmd" /F >nul
 if errorlevel 1 (
   echo Failed to create Windows startup task.
   pause
