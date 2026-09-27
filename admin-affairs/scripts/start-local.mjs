@@ -1,6 +1,6 @@
 import net from 'node:net'
 import { spawn } from 'node:child_process'
-import { mkdirSync, createWriteStream } from 'node:fs'
+import { mkdirSync, openSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -21,17 +21,21 @@ function portOpen(port) {
 }
 
 function start(command, args, logName) {
-  const out = createWriteStream(resolve(logs, logName), { flags: 'a' })
+  const logPath = resolve(logs, logName)
+  const fd = openSync(logPath, 'a')
   const child = spawn(command, args, {
     cwd: root,
     detached: true,
     windowsHide: true,
-    stdio: ['ignore', out, out],
+    stdio: ['ignore', fd, fd],
   })
   child.unref()
 }
 
-if (!(await portOpen(8787))) start(process.execPath, ['scripts/fingerprint-gateway.mjs'], 'fingerprint-gateway.log')
+if (!(await portOpen(8787))) {
+  start(process.execPath, ['scripts/fingerprint-gateway.mjs'], 'fingerprint-gateway.log')
+}
+
 if (!(await portOpen(5173))) {
   const npm = process.platform === 'win32' ? 'npm.cmd' : 'npm'
   start(npm, ['run', 'dev', '--', '--host', '127.0.0.1', '--port', '5173'], 'vite.log')
