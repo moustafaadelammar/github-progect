@@ -12,7 +12,7 @@ function portOpen(port) {
   return new Promise(resolveResult => {
     const s = new net.Socket()
     const done = value => { s.destroy(); resolveResult(value) }
-    s.setTimeout(400)
+    s.setTimeout(500)
     s.once('connect', () => done(true))
     s.once('timeout', () => done(false))
     s.once('error', () => done(false))
@@ -30,6 +30,7 @@ function start(command, args, logName) {
     stdio: ['ignore', fd, fd],
   })
   child.unref()
+  return child
 }
 
 if (!(await portOpen(8787))) {
@@ -37,6 +38,6 @@ if (!(await portOpen(8787))) {
 }
 
 if (!(await portOpen(5173))) {
-  const npm = process.platform === 'win32' ? 'npm.cmd' : 'npm'
-  start(npm, ['run', 'dev', '--', '--host', '127.0.0.1', '--port', '5173'], 'vite.log')
+  const viteCli = resolve(root, 'node_modules', 'vite', 'bin', 'vite.js')
+  start(process.execPath, [viteCli, '--host', '127.0.0.1', '--port', '5173'], 'vite.log')
 }
