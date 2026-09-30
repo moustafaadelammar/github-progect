@@ -1,5 +1,5 @@
 import net from 'node:net'
-import { spawn } from 'node:child_process'
+import { spawn, execFileSync } from 'node:child_process'
 import { mkdirSync, openSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -7,6 +7,16 @@ import { fileURLToPath } from 'node:url'
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const logs = resolve(root, 'logs')
 mkdirSync(logs, { recursive: true })
+
+try {
+  console.log('[LOCAL] Applying HR roster / attendance upgrade...')
+  execFileSync(process.execPath, ['scripts/apply-shifts-upgrade.mjs'], { cwd: root, stdio: 'inherit' })
+  console.log('[LOCAL] HR roster upgrade: OK')
+} catch (error) {
+  console.error('[LOCAL] HR roster upgrade: FAILED')
+  console.error(error instanceof Error ? error.message : error)
+  process.exitCode = 1
+}
 
 function portOpen(port, host = '127.0.0.1') {
   return new Promise(resolveResult => {
