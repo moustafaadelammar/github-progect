@@ -3,18 +3,15 @@ import fs from 'node:fs'
 const file = new URL('../src/App.tsx', import.meta.url)
 let s = fs.readFileSync(file, 'utf8')
 
-// Repair regex literals that were accidentally split across a physical newline.
-// The valid forms are /[\n,;]+/ and /[\n,]+/.
-s = s.replace(/split\(\/\[\\\\\n,;\]\+\//g, "split(/[\\n,;]+/")
-s = s.replace(/split\(\/\[\\\\\n,\]\+\//g, "split(/[\\n,]+/")
-
-// Also handle the literal malformed sequence containing an actual newline.
-s = s.replace("split(/[\\\\\\n,;]+/)", "split(/[\\n,;]+/)")
-s = s.replace("split(/[\\\\\\n,]+/)", "split(/[\\n,]+/)")
-
-// Deterministic fallback: replace any occurrence of a split regex that starts
-// with '/[' and contains a backslash/newline before the separator list.
-s = s.replace(/split\(\/\[[^\]]*\n[,;]+\]\+\//g, (m) => m.includes(',;') ? "split(/[\\n,;]+/" : "split(/[\\n,]+/")
+// Repair the holidays parser without parsing the malformed source itself.
+const marker = "const holidays=String(settings.holidays||'')"
+const start = s.indexOf(marker)
+if (start >= 0) {
+  const end = s.indexOf(';', start)
+  if (end >= 0) {
+    s = s.slice(0, start) + "const holidays=String(settings.holidays||'').split(/[\\n,;]+/).filter(Boolean)" + s.slice(end)
+  }
+}
 
 fs.writeFileSync(file, s, 'utf8')
-console.log('[FIX] App.tsx regex syntax repaired.')
+console.log('[FIX] App.tsx holidays parser repaired.')
