@@ -13,6 +13,14 @@ const saturdayOf=(s:string)=>{const d=dateFrom(s),day=d.getDay();d.setDate(d.get
 const uid=()=>Date.now()+Math.floor(Math.random()*1000)
 const read=<T,>(k:string,f:T):T=>{try{const x=localStorage.getItem(k);return x?JSON.parse(x) as T:f}catch{return f}}
 function TableWrap({children}:{children:ReactNode}){return <div style={{overflowX:'auto'}}>{children}</div>}
+
+function Stat({icon,label,value}:{icon:string;label:string;value:ReactNode}){
+  return <div className="stat-card"><div className="stat-icon">{icon}</div><div><div className="stat-label">{label}</div><strong className="stat-value">{value}</strong></div></div>
+}
+
+function PageActions({title,text,action,onClick}:{title:string;text?:string;action?:string;onClick?:()=>void}){
+  return <section className="page-actions"><div><h2>{title}</h2>{text&&<p>{text}</p>}</div>{action&&onClick&&<button className="primary-btn" onClick={onClick}>{action}</button>}</section>
+}
 function previewXlsx(rows:unknown[],name:string){const ws=XLSX.utils.json_to_sheet(rows),wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Report');const html=XLSX.utils.sheet_to_html(ws),bytes=XLSX.write(wb,{bookType:'xlsx',type:'array'}),blob=new Blob([bytes],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}),url=URL.createObjectURL(blob);const w=window.open('','_blank','width=1200,height=800');if(!w){alert('المتصفح منع نافذة المعاينة. اسمح بالنوافذ المنبثقة ثم أعد المحاولة.');return}w.document.write(`<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><title>${name}</title><style>body{font-family:Tahoma,Arial;padding:20px;background:#f5f7fb}button{padding:10px 16px;border:0;border-radius:8px;background:#1769e0;color:#fff;cursor:pointer}table{border-collapse:collapse;background:#fff;width:100%;font-size:13px}td,th{border:1px solid #dbe2ea;padding:7px;white-space:nowrap}th{background:#eef4fb}</style></head><body><h2>معاينة الملف: ${name}</h2><button id="download">⬇ تحميل Excel</button>${html}<script>document.getElementById('download').onclick=function(){const a=document.createElement('a');a.href='${url}';a.download='${name}';a.click()}</script></body></html>`);w.document.close()}
 function weekLabel(s:string){return `${s} → ${addDays(s,6)}`}
 function monthWeeks(month:string){const [y,m]=month.split('-').map(Number),first=new Date(y,m-1,1),start=saturdayOf(iso(first)),out:string[]=[];for(let i=0;i<6;i++){const s=addWeeks(start,i),end=addDays(s,6);if(s.slice(0,7)===month||end.slice(0,7)===month||i===0)out.push(s)}return out}
