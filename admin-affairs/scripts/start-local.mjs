@@ -10,7 +10,7 @@ mkdirSync(logs, { recursive: true })
 
 try {
   console.log('[LOCAL] Applying HR roster / attendance upgrade...')
-  execFileSync(process.execPath, ['scripts/apply-shifts-upgrade.mjs'], { cwd: root, stdio: 'inherit' })
+  execFileSync(process.execPath, ['scripts/ensure-shifts-upgrade.mjs'], { cwd: root, stdio: 'inherit' })
   console.log('[LOCAL] HR roster upgrade: OK')
 } catch (error) {
   console.error('[LOCAL] HR roster upgrade: FAILED')
