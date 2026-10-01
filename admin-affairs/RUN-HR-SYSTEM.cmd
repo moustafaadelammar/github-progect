@@ -73,12 +73,22 @@ if not exist "%APP%\package.json" (
 
 cd /d "%APP%"
 
-echo [2/7] Installing dependencies...
-call npm.cmd install
-if errorlevel 1 (
-  echo [ERROR] npm install failed.
-  pause
-  exit /b 1
+echo [2/7] Preparing dependencies...
+if "%OFFLINE%"=="1" (
+  if not exist "node_modules\vite\bin\vite.js" (
+    echo [ERROR] Offline dependencies are not installed.
+    echo Run RUN-HR-SYSTEM.cmd once online, then use RUN-HR-SYSTEM.cmd offline.
+    pause
+    exit /b 1
+  )
+  echo [OK] Existing node_modules will be used. No Internet package download.
+) else (
+  call npm.cmd install
+  if errorlevel 1 (
+    echo [ERROR] npm install failed.
+    pause
+    exit /b 1
+  )
 )
 
 echo [3/7] TypeScript + Vite build validation...
