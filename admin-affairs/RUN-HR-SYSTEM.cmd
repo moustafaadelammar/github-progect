@@ -10,13 +10,23 @@ set "OFFLINE=0"
 
 if /I "%~1"=="offline" set "OFFLINE=1"
 
-for %%# in (git node npm) do (
-  where %%# >nul 2>&1
-  if errorlevel 1 if not "%%#"=="git" (
-    echo [ERROR] %%# is not installed or not in PATH.
-    pause
-    exit /b 1
-  )
+where git >nul 2>&1
+if errorlevel 1 (
+  echo [ERROR] Git is not installed or not in PATH.
+  pause
+  exit /b 1
+)
+where node >nul 2>&1
+if errorlevel 1 (
+  echo [ERROR] Node.js is not installed or not in PATH.
+  pause
+  exit /b 1
+)
+where npm.cmd >nul 2>&1
+if errorlevel 1 (
+  echo [ERROR] npm.cmd is not available.
+  pause
+  exit /b 1
 )
 
 if not exist "%ROOT%" mkdir "%ROOT%"
@@ -41,7 +51,7 @@ if not exist "%REPO%\.git" (
   cd /d "%REPO%"
   git fetch origin
   if errorlevel 1 (
-    echo [WARNING] GitHub update failed. Continuing with local copy.
+    echo [WARNING] GitHub update failed. Continuing with the local copy.
   ) else (
     git reset --hard origin/main
     if errorlevel 1 (
