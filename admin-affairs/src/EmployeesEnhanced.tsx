@@ -14,7 +14,6 @@ type LeaveBalance={employeeId:number;year:string;annual:number;casual:number}
 
 const uid=()=>Date.now()+Math.floor(Math.random()*1000)
 const age=(s?:string)=>{if(!s)return '';const d=new Date(s+'T00:00:00'),n=new Date();let a=n.getFullYear()-d.getFullYear();if(n.getMonth()<d.getMonth()||(n.getMonth()===d.getMonth()&&n.getDate()<d.getDate()))a--;return String(a)}
-const days=(a:string,b:string)=>Math.max(1,Math.floor((new Date(b+'T00:00:00').getTime()-new Date(a+'T00:00:00').getTime())/86400000)+1)
 
 export default function EmployeesEnhanced({employees,setEmployees,punches,leaves,missions,medicalLeaves,treatmentDecisions,balances,setPunches}:{employees:Employee[];setEmployees:Dispatch<SetStateAction<Employee[]>>;punches:Punch[];leaves:Leave[];missions:Mission[];medicalLeaves:MedicalLeave[];treatmentDecisions:TreatmentDecision[];balances:LeaveBalance[];setPunches:Dispatch<SetStateAction<Punch[]>>}){
  const list=employees as EmployeeEx[]
@@ -42,7 +41,6 @@ export default function EmployeesEnhanced({employees,setEmployees,punches,leaves
  const selected=profile
  const ep=selected?punches.filter(p=>p.code===selected.code).sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time)):[]
  const el=selected?leaves.filter(x=>x.employeeId===selected.id):[]
- const em=selected?missions.filter(x=>x.employeeId===selected.id):[]
  const ml=selected?medicalLeaves.filter(x=>x.employeeId===selected.id):[]
  const td=selected?treatmentDecisions.filter(x=>x.employeeId===selected.id):[]
  const year=String(new Date().getFullYear()),bal=selected?balances.find(x=>x.employeeId===selected.id&&x.year===year):undefined
