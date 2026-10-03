@@ -1,4 +1,4 @@
-name: Validate restore
+name: Validate restore latest
 on:
   push:
     branches: [main]
