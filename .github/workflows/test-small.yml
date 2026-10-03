@@ -4,4 +4,4 @@ jobs:
   t:
     runs-on: ubuntu-latest
     steps:
-      - run: echo ok
+      - run: cd admin-affairs && npm install && npm run build
