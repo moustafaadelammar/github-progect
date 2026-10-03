@@ -630,3 +630,42 @@ tbody tr:hover{background:#f7fafb}
 @media(max-width:700px){.settlement-grid{grid-template-columns:1fr 1fr}.dashboard-today-note{display:grid;grid-template-columns:1fr 1fr}}
 
 .login-screen{min-height:100vh;display:grid;place-items:center;background:linear-gradient(135deg,#eef4f8,#dce8f0);padding:24px}.login-card{width:min(430px,100%);background:#fff;border-radius:22px;padding:32px;box-shadow:0 20px 60px rgba(0,0,0,.12);text-align:right}.login-card .brand-logo{margin:0 auto 14px;width:58px;height:58px;display:grid;place-items:center;border-radius:16px;font-size:28px;font-weight:800;background:#0f4c5c;color:#fff}.login-card h1{text-align:center;margin:0 0 8px}.login-card p{text-align:center;color:#667085;margin:0 0 24px}.login-card label{display:block;margin:12px 0;font-weight:700}.login-card input{display:block;width:100%;box-sizing:border-box;margin-top:7px;padding:12px;border:1px solid #d0d5dd;border-radius:10px}.login-card .primary-btn{width:100%;margin-top:12px}.login-card small{display:block;color:#667085;margin-top:14px;line-height:1.6}.permission-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px;margin-top:10px}.modal-actions{display:flex;gap:8px;margin-top:18px}.user-box{position:relative}.user-box .view-btn{margin-top:8px}
+
+
+/* UX stability */
+.sidebar{overflow-y:auto;overflow-x:hidden;z-index:30}
+.sidebar nav{overflow-y:auto;max-height:calc(100vh - 210px);padding-left:2px}
+.main{min-width:0;overflow-x:hidden}
+.topbar-title{min-width:0}
+.mobile-page-nav{display:none;align-items:center;gap:6px;margin-bottom:8px}
+.mobile-page-nav select{border:1px solid #dbe2ea;background:#fff;border-radius:8px;padding:8px 10px;font-family:inherit;max-width:240px}
+.nav-arrow,.top-home{border:1px solid #dbe2ea;background:#fff;color:#334155;border-radius:8px;width:36px;height:36px;cursor:pointer}
+.top-home{margin-right:6px}
+.top-home:hover,.nav-arrow:hover{border-color:#2563eb;color:#2563eb}
+.modal-backdrop{z-index:100;overflow:auto}
+.modal{max-height:calc(100vh - 40px);overflow:auto;width:min(920px,calc(100vw - 40px));max-width:920px}
+.table-wrap{max-width:100%;overflow:auto}
+.table-wrap table{min-width:720px}
+.panel{min-width:0;overflow:hidden}
+.content-grid>*{min-width:0}
+@media(max-width:900px){
+ .sidebar{width:235px}
+ .main{width:calc(100% - 235px);margin-right:235px;padding:22px}
+ .mobile-page-nav{display:flex}
+ .topbar{gap:12px}
+}
+@media(max-width:700px){
+ .sidebar{width:72px;padding:16px 8px}
+ .main{width:calc(100% - 72px);margin-right:72px;padding:16px}
+ .brand-copy,.brand h2,.brand span,.user-box strong,.user-box span{display:none}
+ .sidebar nav button{font-size:0;text-align:center;padding:12px 6px}
+ .sidebar nav button span{width:auto;font-size:19px}
+ .user-box{justify-content:center}
+ .user-box .view-btn{font-size:0;padding:5px;width:32px}
+ .mobile-page-nav select{max-width:170px;flex:1}
+ .topbar{align-items:flex-start}
+ .topbar h1{font-size:21px}
+ .top-actions .date{display:none}
+ .modal{width:calc(100vw - 20px);max-height:calc(100vh - 20px);padding:15px}
+ .table-wrap{width:100%}
+}
