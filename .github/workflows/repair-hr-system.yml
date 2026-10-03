@@ -1,0 +1,56 @@
+name: Repair HR System
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/repair-hr-system.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: admin-affairs/package-lock.json
+      - name: Install
+        working-directory: admin-affairs
+        run: npm ci
+      - name: Repair App.tsx integration and syntax
+        working-directory: admin-affairs
+        run: |
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs'
+          const p='src/App.tsx'
+          let s=fs.readFileSync(p,'utf8')
+          if (!s.includes("import Shifts from './Shifts'")) s=s.replace("import './App.css'", "import './App.css'\nimport Shifts from './Shifts'")
+          s=s.replace("'penalties'|'reports'", "'shifts'|'reports'")
+          s=s.replace("{id:'penalties',label:'الجزاءات',icon:'⚠️'}", "{id:'shifts',label:'الورادى',icon:'🔄'}")
+          s=s.replace("{section==='penalties'&&<Penalties employees={employees} rows={penalties} setRows={setPenalties}/>}", "{section==='shifts'&&<Shifts employees={employees}/>}" )
+          s=s.replace("split(/[\\\\\\n,;]+/)", "split(/[,;\\n]+/)")
+          s=s.replace("split(/[\\n,]+/)", "split(/[,\\n]+/)")
+          fs.writeFileSync(p,s)
+          NODE
+      - name: Validate
+        working-directory: admin-affairs
+        run: |
+          npm run build
+          npm run lint
+      - name: Remove one-time workflow and commit
+        run: |
+          rm -f .github/workflows/repair-hr-system.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add admin-affairs/src/App.tsx .github/workflows/repair-hr-system.yml
+          git commit -m "Repair HR app syntax and activate weekly rosters"
+          git push
