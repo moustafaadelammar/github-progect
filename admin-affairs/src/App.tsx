@@ -26,13 +26,6 @@ type SystemUser={id:number;username:string;name:string;password:string;role:'م�
 const menu:{id:Section;label:string;icon:string}[]=[
 {id:'dashboard',label:'الرئيسية',icon:'🏠'},{id:'users',label:'المستخدمون والصلاحيات',icon:'🔐'},{id:'employees',label:'الموظفين',icon:'👥'},{id:'attendance',label:'الحضور والانصراف',icon:'🕘'},{id:'leaves',label:'الإجازات',icon:'🏖️'},{id:'medical',label:'الخدمات الطبية',icon:'🏥'},{id:'missions',label:'المأموريات',icon:'📋'},{id:'shifts',label:'الورادى',icon:'🔄'},{id:'forms',label:'النماذج',icon:'📝'},{id:'reports',label:'التقارير',icon:'📊'},{id:'fingerprints',label:'أجهزة البصمة',icon:'🖐️'},{id:'settings',label:'الإعدادات',icon:'⚙️'}]
 const allSections:Section[]=menu.map(x=>x.id)
-const rolePermissions:Record<SystemUser['role'],Section[]>={
- 'مدير النظام':allSections,
- 'موارد بشرية':['dashboard','employees','leaves','missions','shifts','forms','reports'],
- 'حضور وانصراف':['dashboard','attendance','fingerprints','reports','shifts'],
- 'طبي':['dashboard','employees','medical','leaves','reports'],
- 'مشاهد':['dashboard','employees','attendance','reports']
-}
 const defaultSystemUsers:SystemUser[]=[{id:1,username:'admin',name:'مدير النظام',password:'admin',role:'مدير النظام',active:true,permissions:allSections}]
 
 function read<T>(key:string,fallback:T):T{try{const x=localStorage.getItem(key);return x?JSON.parse(x) as T:fallback}catch{return fallback}}
