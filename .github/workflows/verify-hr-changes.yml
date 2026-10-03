@@ -1,6 +1,6 @@
 name: Verify HR changes
 on:
-  workflow_dispatch: # rerun
+  workflow_dispatch: # rerun2
   push:
     branches: [main]
 permissions:
