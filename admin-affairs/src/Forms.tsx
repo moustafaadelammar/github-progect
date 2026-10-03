@@ -17,7 +17,7 @@ export default function Forms({employees,leaves,balances}:FormsProps){
  const year=from.slice(0,4)
  const bal=balances.find(x=>x.employeeId===employeeId&&x.year===year)||{employeeId,year,annual:30,casual:7}
  const leaveType=type==='اعتيادية'?'اعتيادية':'عارضة'
- const granted=useMemo(()=>leaves.filter(x=>x.employeeId===employeeId&&x.status==='معتمدة'&&x.type===leaveType&&x.from<=year+'-12-31'&&x.to>=year+'-01-01').reduce((n,x)=>n+days(x.from>x.from?x.from:x.from,x.to),0),[leaves,employeeId,leaveType,year])
+ const granted=useMemo(()=>leaves.filter(x=>x.employeeId===employeeId&&x.status==='معتمدة'&&x.type===leaveType&&x.from<=year+'-12-31'&&x.to>=year+'-01-01').reduce((n,x)=>n+days(x.from,x.to),0),[leaves,employeeId,leaveType,year])
  const entitled=type==='اعتيادية'?bal.annual:bal.casual
  const remaining=Math.max(0,entitled-granted)
  const duration=days(from,to)
