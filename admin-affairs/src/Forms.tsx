@@ -63,8 +63,6 @@ export default function Forms({employees,leaves,balances,missions=[],medicalExam
    setMedicalDate(row.date);setMedicalDoctor(row.doctor);setMedicalDiagnosis(row.result)
  }
 
- const title=type==='كشف طبي'?'طلب توقيع الكشف الطبي':'طلب إجازة '+type
-
  return <section className="forms-page">
   <div className="panel">
    <div className="panel-header">
