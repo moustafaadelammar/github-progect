@@ -95,11 +95,6 @@ function birthDateFromNationalId(id?:string){
  const s=String(id||'').replace(/\D/g,'');if(s.length!==14)return '';
  const century=s[0]==='2'?1900:2000;return `${century+Number(s.slice(1,3))}-${s.slice(3,5)}-${s.slice(5,7)}`;
 }
-function ageFromBirthDate(b?:string){
- if(!b)return '';
- const d=new Date(b+'T00:00:00'),n=new Date();let a=n.getFullYear()-d.getFullYear();
- if(n.getMonth()<d.getMonth()||(n.getMonth()===d.getMonth()&&n.getDate()<d.getDate()))a--;return String(a);
-}
 const defaultEmployees:Employee[]=rawEmployees.map(([code,name,department],i)=>{const p=personnelData[code]||{};const birthDate=birthDateFromNationalId(p.nationalId);return {id:i+1,code,name,department,job:p.job||'',grade:p.grade||'',phone:p.phone||'',status:'على رأس العمل',nationalId:p.nationalId,birthDate}})
 function normalizeDepartment(d:string){if(['تجاري','مكتبى تجارى','تحصيل'].includes(d))return 'تجاري';if(['نظم','إداري','فني'].includes(d))return d;return 'فني'}
 
