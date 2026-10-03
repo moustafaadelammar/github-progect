@@ -576,3 +576,33 @@ tbody tr:hover{background:#f7fafb}
 .forms-page{display:flex;flex-direction:column;gap:18px}.form-actions{display:flex;align-items:center;gap:18px;margin-top:18px;flex-wrap:wrap}.forms-modal{width:min(900px,96vw);max-height:94vh;overflow:auto}.print-toolbar{display:flex;gap:8px;margin-bottom:14px}.secondary-btn{border:1px solid #dbe2ea;background:#fff;padding:10px 16px;border-radius:9px;cursor:pointer}.print-area{direction:rtl;background:#fff;color:#111;padding:28px;max-width:820px;margin:auto;border:1px solid #e5e7eb;font-family:Arial,"Tahoma",sans-serif}.print-header{display:flex;align-items:center;justify-content:center;gap:14px;text-align:center;border-bottom:1px solid #222;padding-bottom:12px}.print-header .print-logo{width:48px;height:48px;border:2px solid #111;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700}.print-header strong,.print-header span{display:block}.print-header strong{font-size:18px}.print-header span{font-size:13px;margin-top:3px}.print-area h1{text-align:center;text-decoration:underline;font-size:24px;margin:22px 0}.print-fields{display:grid;grid-template-columns:1fr 1fr;gap:13px 26px;font-size:15px}.print-fields>div{display:flex;gap:8px;border-bottom:1px solid #777;min-height:28px}.print-fields b{white-space:nowrap}.print-fields span{flex:1}.blank-sign{min-height:28px}.pledge{text-align:center;text-decoration:underline;font-weight:700;margin:22px 0 14px}.print-area h3{text-align:center;text-decoration:underline;font-size:16px;margin:20px 0 8px}.leave-form-table,.approval-table{width:100%;border-collapse:collapse;text-align:center;margin-top:6px}.leave-form-table th,.leave-form-table td,.approval-table th,.approval-table td{border:1px solid #222;padding:10px;min-height:48px}.leave-form-table th,.approval-table th{font-weight:700}.approval-table{margin-top:0}.approval-table td{height:70px;vertical-align:middle}.approval-table th{width:50%}
 @media print{body{background:#fff!important}.sidebar,.topbar,.modal-head,.print-toolbar{display:none!important}.main{width:100%!important;margin:0!important;padding:0!important}.modal-backdrop{position:static!important;background:#fff!important;padding:0!important;display:block!important}.modal.forms-modal{box-shadow:none!important;border:0!important;width:100%!important;max-height:none!important;padding:0!important}.print-area{border:0!important;max-width:none!important;padding:12mm!important;min-height:260mm!important}.forms-page{display:none!important}.print-area h1{margin-top:16px}}
 @media(max-width:700px){.print-fields{grid-template-columns:1fr}.print-area{padding:16px}}
+
+/* Official printable HR forms */
+.official-form{direction:rtl;background:#fff;color:#111;font-family:"Arial","Tahoma",sans-serif;line-height:1.65;min-height:250mm;padding:16mm 14mm;max-width:820px;margin:auto;border:1px solid #ddd}
+.official-head{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:1px solid #222;padding-bottom:10px;margin-bottom:14px;text-align:right}
+.official-head strong,.official-head span{display:block}.official-head strong{font-size:18px}.official-head span{font-size:13px}
+.form-number{font-size:13px;min-width:120px;text-align:left}
+.official-form h1{text-align:center;font-size:23px;text-decoration:underline;margin:16px 0 22px}
+.official-fields{display:grid;grid-template-columns:1fr 1fr;gap:11px 28px;font-size:15px}
+.official-fields>div{display:flex;gap:8px;align-items:flex-end;border-bottom:1px solid #555;min-height:30px}
+.official-fields b{white-space:nowrap}.official-fields span{flex:1;min-height:22px}
+.signature-line{min-height:25px!important}
+.official-pledge{text-align:center;font-weight:700;text-decoration:underline;margin:20px 0 12px}
+.official-form h3{text-align:center;text-decoration:underline;font-size:16px;margin:18px 0 8px}
+.official-table,.official-approval{width:100%;border-collapse:collapse;text-align:center}
+.official-table th,.official-table td,.official-approval th,.official-approval td{border:1px solid #222;padding:9px}
+.official-table th,.official-approval th{font-weight:700}.official-approval{margin-top:0}.official-approval td{height:65px}
+.medical-head{text-align:center}.medical-head strong{display:block;font-size:18px}.medical-head span{display:block;margin-top:7px}
+.medical-intro{font-size:16px;margin:24px 0 15px}.medical-fields{display:grid;gap:10px;font-size:15px}.medical-fields>div{display:flex;gap:9px;align-items:flex-end;border-bottom:1px solid #777;min-height:30px}.medical-fields b{white-space:nowrap}.medical-fields span{flex:1}
+.medical-sign{text-align:center;margin:24px 0 32px;font-weight:700;line-height:2.2}.medical-official hr{border:0;border-top:3px solid #555;margin:18px 0 22px}
+.doctor-fields{display:grid;grid-template-columns:1fr 1fr;gap:12px 28px;font-size:15px}.doctor-fields>div{display:flex;gap:8px;border-bottom:1px solid #777;min-height:32px}.doctor-fields b{white-space:nowrap}.doctor-fields span{flex:1}.doctor-fields .wide{grid-column:1/-1;min-height:75px}
+.medical-approved{margin-top:32px;font-size:18px;font-weight:700}
+.mission-title{text-align:center;border:2px solid #333;border-radius:45% 20% 45% 20%;padding:10px 25px;width:300px;margin:20px auto;font-weight:700;font-size:21px;line-height:1.25}.mission-title small{font-size:17px}
+.mission-fields{display:grid;grid-template-columns:1fr 1fr;gap:12px 24px;font-size:15px}.mission-fields>div{display:flex;gap:8px;align-items:flex-end;border-bottom:1px dotted #555;min-height:31px}.mission-fields .wide{grid-column:1/-1}.mission-fields b{white-space:nowrap}.mission-fields span{flex:1}.mission-duration{min-height:45px!important}
+.mission-notes{margin-top:26px;font-weight:600;font-size:14px}.mission-notes p{margin:13px 0}.mission-approval{text-align:left;margin-top:35px;font-size:18px;font-weight:700}
+@media print{
+  @page{size:A4;margin:8mm}
+  .official-form{border:0;max-width:none;min-height:0;padding:5mm 4mm}
+  .official-form h1{margin-top:8px}
+}
+@media(max-width:700px){.official-fields,.doctor-fields,.mission-fields{grid-template-columns:1fr}.official-fields>div,.mission-fields .wide{grid-column:auto}.mission-title{width:240px}}
