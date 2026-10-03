@@ -24,7 +24,7 @@ jobs:
       - name: Install
         working-directory: admin-affairs
         run: npm install
-      - name: Repair App.tsx integration and syntax
+      - name: Repair App.tsx and Shifts.tsx
         working-directory: admin-affairs
         run: |
           node --input-type=module <<'NODE'
@@ -34,10 +34,20 @@ jobs:
           if (!s.includes("import Shifts from './Shifts'")) s=s.replace("import './App.css'", "import './App.css'\nimport Shifts from './Shifts'")
           s=s.replace("'penalties'|'reports'", "'shifts'|'reports'")
           s=s.replace("{id:'penalties',label:'الجزاءات',icon:'⚠️'}", "{id:'shifts',label:'الورادى',icon:'🔄'}")
+          s=s.replace("const [penalties,setPenalties]=useState<Penalty[]>(()=>read('hr_penalties',[]));", "const [penalties]=useState<Penalty[]>(()=>read('hr_penalties',[]));")
+          s=s.replace(/function Penalties\([\s\S]*?(?=function Reports)/, '')
           s=s.replace("{section==='penalties'&&<Penalties employees={employees} rows={penalties} setRows={setPenalties}/>}", "{section==='shifts'&&<Shifts employees={employees}/>}" )
           s=s.replace("split(/[\\\\\\n,;]+/)", "split(/[,;\\n]+/)")
           s=s.replace("split(/[\\n,]+/)", "split(/[,\\n]+/)")
+          s=s.replace("const [busy,setBusy]=useState(false);", "const [busy,setBusy]=useState(false);")
+          s=s.replace("action=\"🔎 اكتشاف الأجهزة\"", "action={busy?'⏳ جاري البحث...':'🔎 اكتشاف الأجهزة'}")
           fs.writeFileSync(p,s)
+
+          const q='src/Shifts.tsx'
+          let sh=fs.readFileSync(q,'utf8')
+          sh=sh.replace(",[manualNotes,setManualNotes]=useState<Record<string,string>>(()=>read('hr_shift_absence_notes',{}))", "")
+          sh=sh.replace(";useEffect(()=>localStorage.setItem('hr_shift_absence_notes',JSON.stringify(manualNotes)),[manualNotes])", "")
+          fs.writeFileSync(q,sh)
           NODE
       - name: Validate
         working-directory: admin-affairs
@@ -49,6 +59,6 @@ jobs:
           rm -f .github/workflows/repair-hr-system.yml
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add admin-affairs/src/App.tsx .github/workflows/repair-hr-system.yml
-          git commit -m "Repair HR app syntax and activate weekly rosters"
+          git add admin-affairs/src/App.tsx admin-affairs/src/Shifts.tsx .github/workflows/repair-hr-system.yml
+          git commit -m "Repair HR app and enable weekly rosters"
           git push
