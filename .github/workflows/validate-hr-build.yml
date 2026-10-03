@@ -1,4 +1,4 @@
-name: Validate HR build # current
+name: Validate HR build # current2
 on:
   push:
     branches: [main]
