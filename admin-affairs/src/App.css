@@ -619,3 +619,12 @@ tbody tr:hover{background:#f7fafb}
 .medical-enhanced .medical-tabs{margin:14px 0}.medical-enhanced .quick-actions{display:flex;gap:10px;flex-wrap:wrap}.treatment-official{background:#fff;padding:30px;border:1px solid #ddd;min-height:650px}
 @media(max-width:900px){.settlement-grid{grid-template-columns:repeat(2,1fr)}.profile-grid{grid-template-columns:1fr}.employee-card-grid{grid-template-columns:1fr}.employee-form-top{flex-direction:column}.child-row{grid-template-columns:1fr}.dashboard-settlement-head{align-items:flex-start;flex-direction:column}}
 @media print{body *{visibility:hidden!important}.print-area,.print-area *{visibility:visible!important}.print-area{position:absolute!important;inset:0!important;width:100%!important;box-shadow:none!important;border:0!important}}
+
+/* Dashboard attendance and settlement */
+.settlement-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}
+.settlement-card{border:1px solid #e1e8ef;background:#fff;border-radius:14px;padding:16px;text-align:right;cursor:pointer;transition:.18s;box-shadow:0 5px 18px rgba(15,42,67,.04)}
+.settlement-card:hover{transform:translateY(-2px);border-color:#19a974;box-shadow:0 10px 25px rgba(15,42,67,.08)}
+.settlement-card span,.settlement-card small{display:block;color:#64748b}.settlement-card strong{display:block;font-size:27px;color:#102a43;margin:7px 0}.settlement-card.danger{border-right:4px solid #dc2626}.settlement-card.danger strong{color:#c2413d}
+.dashboard-today-note{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px}.dashboard-today-note span{background:#fff;border:1px solid #e1e8ef;border-radius:9px;padding:8px 12px;color:#536879;font-size:12px}.dashboard-today-note b{color:#087f5b}
+@media(max-width:1200px){.settlement-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:700px){.settlement-grid{grid-template-columns:1fr 1fr}.dashboard-today-note{display:grid;grid-template-columns:1fr 1fr}}
