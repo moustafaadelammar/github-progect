@@ -21,19 +21,15 @@ source = beforeLines.filter(line => {
   }
   return true
 }).join('\n')
-
-// Generated one-line patches can leave a marker in the middle of the file.
-// Remove it only when the next token is clearly a JSX/declaration boundary.
 source = source.replace(/(^|[;}])\s*[+-]\s*(?=(?:<|const\b|let\b|type\b|function\b|return\b|if\b|for\b|while\b|switch\b|try\b|catch\b))/g, '$1')
 source = source.replace(/(^|[>\]])\s*[+-]\s*(?=<)/g, '$1')
 
-// 2) Fix malformed generated newline regexes such as split(/[\\\n,;]+/).
+// 2) Fix malformed generated newline regexes.
 const badSplit = /split\(\/\[[^\]]*[\r\n][^\]]*\]\+\//g
 if (badSplit.test(source)) {
   source = source.replace(badSplit, 'split(/[\\n,;]+/')
   changes.push('fixed malformed newline delimiter regex')
 }
-
 const knownBroken = "split(/[\\\\\\n,;]+/"
 if (source.includes(knownBroken)) {
   source = source.replaceAll(knownBroken, 'split(/[\\n,;]+/')
@@ -47,7 +43,7 @@ source = source.replace(
 )
 source = source.replace(
   /const empty=\{code:'',name:'',department:'فني',job:'',grade:'',phone:/,
-  "const empty={code:'',name:'',department:'فني',job:'',grade:'',status:'في الخدمة',phone:"
+  "const empty={code:'',name:'',department:'فني',job:'',grade:'',status:'في الخدمة' as string,phone:"
 )
 source = source.replace(
   /setEmployees\(xs=>\[\.\.\.xs,\{\.\.\.fixed,id:uid\(\),status:'على رأس العمل'\}\]\)/,
@@ -61,8 +57,7 @@ if (!source.includes("value={form.status||'في الخدمة'}")) {
   changes.push('added employee status selector')
 }
 
-// 4) Company attendance rule: shift technicians are considered present by register
-// unless an approved absence/leave/mission/medical exception is explicitly recorded.
+// 4) Company attendance rule: shift technicians are present by register unless an explicit exception exists.
 const councilExpr = "const isCouncilTech=(e:Employee)=>/مجالس/.test(String(e.job||''))||/مجالس/.test(String(e.department||''))"
 const companyExpr = "const isCouncilTech=(e:Employee)=>/مجالس/.test(String(e.job||''))||/مجالس/.test(String(e.department||''))||/فني\\s*ورادى|فنى\\s*ورادى|عامل\\s*ورادى|ورادى|وردي/.test(String(e.job||''))"
 if (source.includes(councilExpr)) {
@@ -77,7 +72,7 @@ source = source.replace(
 )
 source = source.replace(
   /const empty=\{employeeId:employees\[0\]\?\.id\|\|0,type:'اعتيادية',from:today\(\),to:today\(\),days:1,status:'قيد المراجعة',note:''\}/,
-  "const empty={employeeId:employees[0]?.id||0,type:'اعتيادية',from:today(),to:today(),days:1,status:'قيد المراجعة',note:'',category:'الرصيد' as const}"
+  "const empty={employeeId:employees[0]?.id||0,type:'اعتيادية',from:today(),to:today(),days:1,status:'قيد المراجعة',note:'',category:'الرصيد' as 'الرصيد'|'تسويات'}"
 )
 source = source.replace(
   /const used=\(id:number,type:string\)=>rows\.filter\(x=>x\.employeeId===id&&x\.status==='معتمدة'&&x\.type===type\)/g,
@@ -96,7 +91,6 @@ source = source.replace(
   "setLeaves(xs=>[...xs,{id:uid(),employeeId:e.id,type:leaveType,from:date,to:date,days:1,status:'معتمدة',note:'من الحضور والانصراف',category:'الرصيد'}])"
 )
 
-// Add the category selector to the leave form if absent.
 if (!source.includes('value={f.category}')) {
   source = source.replace(
     /(<label>النوع<select value=\{f\.type\}[\s\S]*?<\/select><\/label>)/,
