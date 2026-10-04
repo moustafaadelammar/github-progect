@@ -1,0 +1,43 @@
+name: Repair and build HR system
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'admin-affairs/**'
+      - '.github/workflows/repair-and-build.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  repair-build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: admin-affairs
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: admin-affairs/package-lock.json
+      - run: npm ci
+      - run: node scripts/repair-source.mjs
+      - run: npm run build
+      - name: Commit repaired source
+        working-directory: .
+        run: |
+          if git diff --quiet -- admin-affairs/src/App.tsx; then
+            echo "No source repair was necessary."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add admin-affairs/src/App.tsx
+          git commit -m "fix: repair generated App.tsx source"
+          git push
