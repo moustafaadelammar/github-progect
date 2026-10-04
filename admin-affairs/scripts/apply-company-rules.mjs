@@ -24,11 +24,6 @@ replaceAllRegex(
   "const isCouncilTech=(e:Employee)=>/مجالس/.test(String(e.job||''))||/مجالس/.test(String(e.department||''))||/ورادى|ورادي/.test(String(e.job||''))||/ورادى|ورادي/.test(String(e.department||''))",
   'shift-ledger helper'
 )
-replaceAllRegex(
-  /\/مجالس\/.test\(String\(e\.job\|\|''\)\)\|\|\/مجالس\/.test\(String\(e\.department\|\|''\)\)/g,
-  "/مجالس/.test(String(e.job||''))||/مجالس/.test(String(e.department||''))||/ورادى|ورادي/.test(String(e.job||''))||/ورادى|ورادي/.test(String(e.department||''))",
-  'shift-ledger rule extension'
-)
 
 // Dashboard: shift-ledger employees are excluded from lateness alerts.
 replaceAllRegex(
