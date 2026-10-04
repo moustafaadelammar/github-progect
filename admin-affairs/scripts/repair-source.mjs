@@ -11,14 +11,24 @@ let source = fs.readFileSync(appPath, 'utf8')
 const original = source
 const changes = []
 
-// Previous automated edits accidentally left unified-diff markers in the TSX source.
-// Remove only markers that occur at the beginning of a line immediately before a
-// declaration. Never touch normal + or - operators inside application code.
-source = source.replace(/^\+(?=(?:function|const|let|type|interface|export|import)\b)/gm, '')
-source = source.replace(/^-(?=(?:function|const|let|type|interface|export|import)\b)/gm, '')
+// Generated edits have occasionally left unified-diff markers in TSX. Remove
+// marker prefixes only when they are at the beginning of a source line. This
+// intentionally does not touch normal + / - operators inside application code.
+const beforeLines = source.split(/\r?\n/)
+source = beforeLines.filter(line => {
+  const t = line.trimStart()
+  if (/^[+-]\s*(?:function|const|let|type|interface|export|import|return|if|for|while|switch|try|catch|class|<)/.test(t)) {
+    changes.push(`removed diff marker: ${t.slice(0, 80)}`)
+    return false
+  }
+  return true
+}).join('\n')
+
+// Also remove an isolated diff marker before a JSX/source line when an older
+// generated patch did not include a declaration keyword.
+source = source.replace(/^\s*[+-](?=\s*<)/gm, '')
 
 // The employee profile supports three operational states requested by the company.
-// Add the field to the form type if an earlier version does not have it.
 source = source.replace(
   /type FormEmployee=\{code:string;name:string;department:string;job:string;grade:string;/,
   "type FormEmployee={code:string;name:string;department:string;job:string;grade:string;status:string;"
@@ -30,15 +40,9 @@ if (!source.includes('حالة الموظف') && source.includes("set('grade',e.
     /(<label>الدرجة<input value=\{form\.grade\} onChange=\{e=>set\('grade',e\.target\.value\)\}\/><\/label>)/,
     "$1<label>حالة الموظف<select value={form.status||'في الخدمة'} onChange={e=>set('status',e.target.value)}><option>في الخدمة</option><option>إجازة</option><option>معاش</option></select></label>"
   )
+  changes.push('added employee status selector')
 }
 
-if (source !== original) {
-  fs.writeFileSync(appPath, source, 'utf8')
-  if (original.includes('+function Dashboard')) changes.push('removed accidental diff marker before Dashboard')
-  if (original.includes('-function Dashboard')) changes.push('removed obsolete diff marker before Dashboard')
-  if (original.includes('type FormEmployee={') && !original.includes('status:string')) changes.push('added employee status field')
-  if (original.includes("set('grade',e.target.value)") && !original.includes('حالة الموظف')) changes.push('added employee status selector')
-}
-
+if (source !== original) fs.writeFileSync(appPath, source, 'utf8')
 console.log('[REPAIR] Source repair completed.')
-for (const change of changes) console.log('[REPAIR] '+change)
+for (const change of changes) console.log('[REPAIR] ' + change)
