@@ -12,15 +12,14 @@ const original = source
 const changes = []
 
 function replaceOnce(find, replacement, label) {
-  if (!source.includes(find)) {
-    if (source.includes(label)) return
-    throw new Error(`[RULES] Expected code not found: ${label}`)
-  }
+  if (source.includes(replacement)) return
+  if (!source.includes(find)) throw new Error(`[RULES] Expected code not found: ${label}`)
   source = source.replace(find, replacement)
   changes.push(label)
 }
 
 function replaceAll(find, replacement, label) {
+  if (source.includes(replacement)) return
   const count = source.split(find).length - 1
   if (!count) throw new Error(`[RULES] Expected code not found: ${label}`)
   source = source.split(find).join(replacement)
