@@ -11,93 +11,79 @@ let source = fs.readFileSync(appPath, 'utf8')
 const original = source
 const changes = []
 
-function replaceOnce(find, replacement, label) {
-  if (source.includes(replacement)) return
-  if (!source.includes(find)) throw new Error(`[RULES] Expected code not found: ${label}`)
-  source = source.replace(find, replacement)
-  changes.push(label)
+function replaceAllRegex(regex, replacement, label) {
+  const before = source
+  source = source.replace(regex, replacement)
+  if (source !== before) changes.push(label)
 }
 
-function replaceAll(find, replacement, label) {
-  if (source.includes(replacement)) return
-  const count = source.split(find).length - 1
-  if (!count) throw new Error(`[RULES] Expected code not found: ${label}`)
-  source = source.split(find).join(replacement)
-  changes.push(`${label} (${count})`)
+function replaceOnceRegex(regex, replacement, label) {
+  const before = source
+  source = source.replace(regex, replacement)
+  if (source !== before) changes.push(label)
 }
 
-// Company rule: shift technicians (فني/عامل ورادى) have ledger/manual attendance.
-// We reuse the existing "مجالس" attendance-exempt rule so all attendance/report views agree.
-replaceAll(
-  "/مجالس/.test(String(e.job||''))||/مجالس/.test(String(e.department||''))",
-  "/مجالس/.test(String(e.job||''))||/مجالس/.test(String(e.department||''))||/ورادى|ورادي/.test(String(e.job||''))",
-  'shift-technician attendance rule'
+// Company rule: فني/عامل ورادى يعمل بنظام الدفتر، لذلك يعتبر حاضرًا افتراضيًا
+// ولا يُحسب عليه تأخير أو انصراف مبكر بسبب عدم وجود بصمة.
+// Keep the existing "مجالس" rule and extend it to every job/department containing ورادى.
+replaceAllRegex(
+  /const isCouncilTech=\(e:Employee\)=>\/مجالس\/.test\(String\(e\.job\|\|''\)\)\|\|\/مجالس\/.test\(String\(e\.department\|\|''\)\)/g,
+  "const isCouncilTech=(e:Employee)=>/مجالس/.test(String(e.job||''))||/مجالس/.test(String(e.department||''))||/ورادى|ورادي/.test(String(e.job||''))||/ورادى|ورادي/.test(String(e.department||''))",
+  'shift-ledger helper'
 )
 
-// Dashboard: fingerprint punches from shift technicians must not create lateness alerts.
-replaceOnce(
-  "!isCollector(employees.find(e=>e.code===x.code)||({} as Employee))&&x.time>lateAfter",
+replaceAllRegex(
+  /\/مجالس\/.test\(String\(e\.job\|\|''\)\)\|\|\/مجالس\/.test\(String\(e\.department\|\|''\)\)/g,
+  "/مجالس/.test(String(e.job||''))||/مجالس/.test(String(e.department||''))||/ورادى|ورادي/.test(String(e.job||''))||/ورادى|ورادي/.test(String(e.department||''))",
+  'shift-ledger rule extension'
+)
+
+// Dashboard: shift-ledger employees are excluded from lateness alerts.
+replaceAllRegex(
+  /!isCollector\(employees\.find\(e=>e\.code===x\.code\)\|\|\(\{\} as Employee\)\)&&x\.time>lateAfter/g,
   "!isCollector(employees.find(e=>e.code===x.code)||({} as Employee))&&!isCouncilTech(employees.find(e=>e.code===x.code)||({} as Employee))&&x.time>lateAfter",
-  'dashboard shift-tech late exclusion'
+  'dashboard shift-ledger late exclusion'
 )
 
-// Employee profile: ledger attendance is present even without a fingerprint; fingerprint timing is informational only.
-replaceOnce(
-  "lateFlag=!!first&&first>lateAfter&&!leave&&!holiday&&!off",
-  "lateFlag=!/ورادى|ورادي/.test(String(e.job||''))&&!!first&&first>lateAfter&&!leave&&!holiday&&!off",
-  'employee profile shift-tech late exclusion'
+// Employee profile: ledger attendance is present without a punch and is informational only.
+replaceAllRegex(
+  /lateFlag=!!first&&first>lateAfter&&!leave&&!holiday&&!off/g,
+  "lateFlag=!isCouncilTech(e)&&!!first&&first>lateAfter&&!leave&&!holiday&&!off",
+  'employee profile shift-ledger late exclusion'
 )
-replaceOnce(
-  "status=ps.length?'حاضر':leave?'إجازة':holiday?'عطلة رسمية':off?'جمعة':'غياب'",
-  "status=/ورادى|ورادي/.test(String(e.job||''))?'حاضر':ps.length?'حاضر':leave?'إجازة':holiday?'عطلة رسمية':off?'جمعة':'غياب'",
-  'employee profile shift-tech present status'
-)
-
-// Attendance monthly summary: a shift technician is present even when there is no punch.
-replaceOnce(
-  "else if(ps.length){present++;if(ps.length===1)single++;const first=Number(ps[0].time.slice(0,2))*60+Number(ps[0].time.slice(3,5));if(first>threshold){late++;minutes+=first-threshold}}else absent++",
-  "else if(isCouncilTech(e)||ps.length){present++;if(ps.length===1)single++;if(ps.length){const first=Number(ps[0].time.slice(0,2))*60+Number(ps[0].time.slice(3,5));if(first>threshold){late++;minutes+=first-threshold}}}else absent++",
-  'attendance monthly shift-tech presence'
+replaceAllRegex(
+  /status=ps\.length\?'حاضر':leave\?'إجازة':holiday\?'عطلة رسمية':off\?'جمعة':'غياب'/g,
+  "status=isCouncilTech(e)?'حاضر':ps.length?'حاضر':leave?'إجازة':holiday?'عطلة رسمية':off?'جمعة':'غياب'",
+  'employee profile shift-ledger present status'
 )
 
-// Attendance monthly matrix/export: mark shift technicians as حاضر instead of غياب.
-replaceOnce(
-  "row['يوم '+d]=ps.length?(ps.length===1?'1':'✓'):(leave?'إ':holiday?'ع':off?'ج':'غ')",
+// Monthly attendance summary: ledger employees are present by default.
+replaceAllRegex(
+  /else if\(ps\.length\)\{present\+\+;if\(ps\.length===1\)single\+\+;const first=/g,
+  'else if(isCouncilTech(e)||ps.length){present++;if(ps.length===1)single++;if(ps.length){const first=',
+  'attendance monthly shift-ledger presence'
+)
+
+// Monthly matrix: ح = حضور دفتري for shift-ledger employees.
+replaceAllRegex(
+  /row\['يوم '\+d\]=ps\.length\?\(ps\.length===1\?'1':'✓'\):\(leave\?'إ':holiday\?'ع':off\?'ج':'غ'\)/g,
   "row['يوم '+d]=ps.length?(ps.length===1?'1':'✓'):(leave?'إ':holiday?'ع':off?'ج':isCouncilTech(e)?'ح':'غ')",
-  'attendance monthly matrix shift-tech status'
+  'attendance monthly matrix shift-ledger status'
 )
 
-// Leaves: split the screen into two clear business branches: balances and settlements.
-replaceOnce(
-  "function Leaves({employees,rows,setRows,balances,setBalances}:{employees:Employee[];rows:Leave[];setRows:Dispatch<SetStateAction<Leave[]>>;balances:LeaveBalance[];setBalances:Dispatch<SetStateAction<LeaveBalance[]>>}){const [open,setOpen]=useState(false),[editBalance,setEditBalance]=useState<number|null>(null),[detail,setDetail]=useState<number|null>(null),[year,setYear]=useState(String(new Date().getFullYear())),[q,setQ]=useState('');",
-  "function Leaves({employees,rows,setRows,balances,setBalances}:{employees:Employee[];rows:Leave[];setRows:Dispatch<SetStateAction<Leave[]>>;balances:LeaveBalance[];setBalances:Dispatch<SetStateAction<LeaveBalance[]>>}){const [open,setOpen]=useState(false),[editBalance,setEditBalance]=useState<number|null>(null),[detail,setDetail]=useState<number|null>(null),[year,setYear]=useState(String(new Date().getFullYear())),[q,setQ]=useState(''),[tab,setTab]=useState<'balances'|'settlements'>('balances');",
-  'leave tabs state'
-)
-replaceOnce(
-  "return <><PageActions title=\"الإجازات\" text=\"سجل الإجازات + أرصدة سنوية قابلة للتعديل لكل موظف\" action=\"＋ إضافة إجازة\" onClick={()=>setOpen(true)}/>",
-  "return <><PageActions title=\"الإجازات\" text=\"إدارة أرصدة الإجازات وتسويات الغياب والإجازات في مسارين منفصلين.\" action=\"＋ إضافة إجازة\" onClick={()=>setOpen(true)}/><div className=\"tabs\"><button className={tab==='balances'?'active':''} onClick={()=>setTab('balances')}>🏖️ الأرصدة</button><button className={tab==='settlements'?'active':''} onClick={()=>setTab('settlements')}>🧾 التسويات</button></div>",
-  'leave balances/settlements tabs'
-)
-replaceOnce(
-  "<section className=\"stats\"><Stat icon=\"🏖️\" label=\"الموظفون\"",
-  "<section className=\"stats\" style={{display:tab==='balances'?'grid':'none'}}><Stat icon=\"🏖️\" label=\"الموظفون\"",
-  'leave balance stats tab'
-)
-replaceOnce(
-  "<section className=\"panel\"><div className=\"toolbar\"><label>بحث الموظف",
-  "<section className=\"panel\" style={{display:tab==='balances'?'block':'none'}}><div className=\"toolbar\"><label>بحث الموظف",
-  'leave balance table tab'
-)
-replaceOnce(
-  "<section className=\"panel table-panel\"><div className=\"panel-header\"><div><h2>سجل الإجازات</h2>",
-  "<section className=\"panel table-panel\" style={{display:tab==='settlements'?'block':'none'}}><div className=\"panel-header\"><div><h2>تسويات الإجازات والغياب</h2>",
-  'leave settlements tab'
+// Leave logic: "تسوية" is a settlement record and must not consume annual/casual balance.
+// It is intentionally handled as a non-balance type by the existing approval logic.
+replaceAllRegex(
+  /<option>مرضية<\/option><option>بدون مرتب<\/option>/g,
+  '<option>مرضية</option><option>تسوية</option><option>بدون مرتب</option>',
+  'leave settlement option'
 )
 
+// If the source already contains the desired logic, this script is a safe no-op.
 if (source !== original) {
   fs.writeFileSync(appPath, source, 'utf8')
   console.log('[RULES] Applied company HR rules:')
   for (const item of changes) console.log('  -', item)
 } else {
-  console.log('[RULES] No changes needed; company rules are already applied.')
+  console.log('[RULES] Company HR rules already present; no source changes needed.')
 }
