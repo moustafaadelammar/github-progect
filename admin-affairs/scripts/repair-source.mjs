@@ -11,7 +11,7 @@ let source = fs.readFileSync(appPath, 'utf8')
 const original = source
 const changes = []
 
-// 1) Remove accidental unified-diff markers without touching real arithmetic.
+// 1) Remove accidental unified-diff markers without touching normal arithmetic.
 const beforeLines = source.split(/\r?\n/)
 source = beforeLines.filter(line => {
   const t = line.trimStart()
@@ -21,18 +21,20 @@ source = beforeLines.filter(line => {
   }
   return true
 }).join('\n')
-source = source.replace(/(^|[>}\]])\s*[+-]\s*(?=[<{])/gm, '$1')
+
+// Generated one-line patches can leave a marker in the middle of the file.
+// Remove it only when the next token is clearly a JSX/declaration boundary.
+source = source.replace(/(^|[;}])\s*[+-]\s*(?=(?:<|const\b|let\b|type\b|function\b|return\b|if\b|for\b|while\b|switch\b|try\b|catch\b))/g, '$1')
+source = source.replace(/(^|[>\]])\s*[+-]\s*(?=<)/g, '$1')
 
 // 2) Fix malformed generated newline regexes such as split(/[\\\n,;]+/).
-// Always normalize them to a simple, valid delimiter regex.
 const badSplit = /split\(\/\[[^\]]*[\r\n][^\]]*\]\+\//g
 if (badSplit.test(source)) {
   source = source.replace(badSplit, 'split(/[\\n,;]+/')
   changes.push('fixed malformed newline delimiter regex')
 }
 
-// Also repair the known literal produced by earlier generated edits.
-const knownBroken = "split(/[\\\\\\n,;]+/")
+const knownBroken = "split(/[\\\\\\n,;]+/"
 if (source.includes(knownBroken)) {
   source = source.replaceAll(knownBroken, 'split(/[\\n,;]+/')
   changes.push('fixed known broken holiday regex')
@@ -93,17 +95,8 @@ source = source.replace(
   /setLeaves\(xs=>\[\.\.\.xs,\{id:uid\(\),employeeId:e\.id,type:leaveType,from:date,to:date,days:1,status:'معتمدة',note:'من الحضور والانصراف'\}\]\)/g,
   "setLeaves(xs=>[...xs,{id:uid(),employeeId:e.id,type:leaveType,from:date,to:date,days:1,status:'معتمدة',note:'من الحضور والانصراف',category:'الرصيد'}])"
 )
-if (!source.includes('category===\'تسويات\'')) {
-  changes.push('leave category normalization requested')
-}
 
-// Add the category selector and display column to the leave screen if absent.
-if (!source.includes('نوع السجل')) {
-  source = source.replace(
-    /(<label>النوع<select value=\{f\.type\} onChange=\{e=>setF\(\{\.\.\.f,type:e\.target\.value\}\)\}>)/,
-    "$1"
-  )
-}
+// Add the category selector to the leave form if absent.
 if (!source.includes('value={f.category}')) {
   source = source.replace(
     /(<label>النوع<select value=\{f\.type\}[\s\S]*?<\/select><\/label>)/,
@@ -112,7 +105,6 @@ if (!source.includes('value={f.category}')) {
   changes.push('added leave category selector')
 }
 
-// 6) Avoid stale/broken generated arithmetic around status fields.
 source = source.replaceAll("status:'فعال'", "status:'في الخدمة'")
 
 if (source !== original) fs.writeFileSync(appPath, source, 'utf8')
