@@ -17,21 +17,13 @@ function replaceAllRegex(regex, replacement, label) {
   if (source !== before) changes.push(label)
 }
 
-function replaceOnceRegex(regex, replacement, label) {
-  const before = source
-  source = source.replace(regex, replacement)
-  if (source !== before) changes.push(label)
-}
-
 // Company rule: فني/عامل ورادى يعمل بنظام الدفتر، لذلك يعتبر حاضرًا افتراضيًا
 // ولا يُحسب عليه تأخير أو انصراف مبكر بسبب عدم وجود بصمة.
-// Keep the existing "مجالس" rule and extend it to every job/department containing ورادى.
 replaceAllRegex(
   /const isCouncilTech=\(e:Employee\)=>\/مجالس\/.test\(String\(e\.job\|\|''\)\)\|\|\/مجالس\/.test\(String\(e\.department\|\|''\)\)/g,
   "const isCouncilTech=(e:Employee)=>/مجالس/.test(String(e.job||''))||/مجالس/.test(String(e.department||''))||/ورادى|ورادي/.test(String(e.job||''))||/ورادى|ورادي/.test(String(e.department||''))",
   'shift-ledger helper'
 )
-
 replaceAllRegex(
   /\/مجالس\/.test\(String\(e\.job\|\|''\)\)\|\|\/مجالس\/.test\(String\(e\.department\|\|''\)\)/g,
   "/مجالس/.test(String(e.job||''))||/مجالس/.test(String(e.department||''))||/ورادى|ورادي/.test(String(e.job||''))||/ورادى|ورادي/.test(String(e.department||''))",
@@ -48,12 +40,12 @@ replaceAllRegex(
 // Employee profile: ledger attendance is present without a punch and is informational only.
 replaceAllRegex(
   /lateFlag=!!first&&first>lateAfter&&!leave&&!holiday&&!off/g,
-  "lateFlag=!isCouncilTech(e)&&!!first&&first>lateAfter&&!leave&&!holiday&&!off",
+  "lateFlag=!\/ورادى|ورادي\/.test(String(e.job||''))&&!!first&&first>lateAfter&&!leave&&!holiday&&!off",
   'employee profile shift-ledger late exclusion'
 )
 replaceAllRegex(
   /status=ps\.length\?'حاضر':leave\?'إجازة':holiday\?'عطلة رسمية':off\?'جمعة':'غياب'/g,
-  "status=isCouncilTech(e)?'حاضر':ps.length?'حاضر':leave?'إجازة':holiday?'عطلة رسمية':off?'جمعة':'غياب'",
+  "status=/ورادى|ورادي/.test(String(e.job||''))?'حاضر':ps.length?'حاضر':leave?'إجازة':holiday?'عطلة رسمية':off?'جمعة':'غياب'",
   'employee profile shift-ledger present status'
 )
 
@@ -71,15 +63,13 @@ replaceAllRegex(
   'attendance monthly matrix shift-ledger status'
 )
 
-// Leave logic: "تسوية" is a settlement record and must not consume annual/casual balance.
-// It is intentionally handled as a non-balance type by the existing approval logic.
+// Leave logic: "تسوية" is a settlement record and does not consume annual/casual balance.
 replaceAllRegex(
   /<option>مرضية<\/option><option>بدون مرتب<\/option>/g,
   '<option>مرضية</option><option>تسوية</option><option>بدون مرتب</option>',
   'leave settlement option'
 )
 
-// If the source already contains the desired logic, this script is a safe no-op.
 if (source !== original) {
   fs.writeFileSync(appPath, source, 'utf8')
   console.log('[RULES] Applied company HR rules:')
