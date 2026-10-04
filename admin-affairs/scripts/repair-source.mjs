@@ -11,7 +11,7 @@ let source = fs.readFileSync(appPath, 'utf8')
 const original = source
 const changes = []
 
-// 1) Remove accidental unified-diff markers without touching normal arithmetic.
+// Remove accidental diff markers without touching normal arithmetic.
 const beforeLines = source.split(/\r?\n/)
 source = beforeLines.filter(line => {
   const t = line.trimStart()
@@ -24,7 +24,7 @@ source = beforeLines.filter(line => {
 source = source.replace(/(^|[;}])\s*[+-]\s*(?=(?:<|const\b|let\b|type\b|function\b|return\b|if\b|for\b|while\b|switch\b|try\b|catch\b))/g, '$1')
 source = source.replace(/(^|[>\]])\s*[+-]\s*(?=<)/g, '$1')
 
-// 2) Fix malformed generated newline regexes.
+// Repair malformed generated regex literals.
 const badSplit = /split\(\/\[[^\]]*[\r\n][^\]]*\]\+\//g
 if (badSplit.test(source)) {
   source = source.replace(badSplit, 'split(/[\\n,;]+/')
@@ -36,7 +36,7 @@ if (source.includes(knownBroken)) {
   changes.push('fixed known broken holiday regex')
 }
 
-// 3) Employee operational status: خدمة / إجازة / معاش.
+// Employee operational status: خدمة / إجازة / معاش.
 source = source.replace(
   /type FormEmployee=\{code:string;name:string;department:string;job:string;grade:string;(?!status:string;)/,
   'type FormEmployee={code:string;name:string;department:string;job:string;grade:string;status:string;'
@@ -49,6 +49,8 @@ source = source.replace(
   /setEmployees\(xs=>\[\.\.\.xs,\{\.\.\.fixed,id:uid\(\),status:'على رأس العمل'\}\]\)/,
   "setEmployees(xs=>[...xs,{...fixed,id:uid(),status:form.status||'في الخدمة'}])"
 )
+source = source.replaceAll("status:'على رأس العمل'", "status:'في الخدمة'")
+source = source.replaceAll("status:pick(r,['الحالة','status'])||'على رأس العمل'", "status:pick(r,['الحالة','status'])||'في الخدمة'")
 if (!source.includes("value={form.status||'في الخدمة'}")) {
   source = source.replace(
     /(<label>الدرجة<input value=\{form\.grade\} onChange=\{e=>set\('grade',e\.target\.value\)\}\/><\/label>)/,
@@ -57,7 +59,7 @@ if (!source.includes("value={form.status||'في الخدمة'}")) {
   changes.push('added employee status selector')
 }
 
-// 4) Company attendance rule: shift technicians are present by register unless an explicit exception exists.
+// Company attendance rule: shift technicians are present by register unless an explicit exception exists.
 const councilExpr = "const isCouncilTech=(e:Employee)=>/مجالس/.test(String(e.job||''))||/مجالس/.test(String(e.department||''))"
 const companyExpr = "const isCouncilTech=(e:Employee)=>/مجالس/.test(String(e.job||''))||/مجالس/.test(String(e.department||''))||/فني\\s*ورادى|فنى\\s*ورادى|عامل\\s*ورادى|ورادى|وردي/.test(String(e.job||''))"
 if (source.includes(councilExpr)) {
@@ -65,7 +67,7 @@ if (source.includes(councilExpr)) {
   changes.push('applied shift-technician register attendance rule')
 }
 
-// 5) Leave ledger split: balance-backed leave vs settlements.
+// Leave ledger split: balance-backed leave vs settlements.
 source = source.replace(
   /type Leave=\{id:number;employeeId:number;type:string;from:string;to:string;days:number;status:string;note:string\}/,
   'type Leave={id:number;employeeId:number;type:string;from:string;to:string;days:number;status:string;note:string;category?:\'الرصيد\'|\'تسويات\'}'
@@ -90,7 +92,6 @@ source = source.replace(
   /setLeaves\(xs=>\[\.\.\.xs,\{id:uid\(\),employeeId:e\.id,type:leaveType,from:date,to:date,days:1,status:'معتمدة',note:'من الحضور والانصراف'\}\]\)/g,
   "setLeaves(xs=>[...xs,{id:uid(),employeeId:e.id,type:leaveType,from:date,to:date,days:1,status:'معتمدة',note:'من الحضور والانصراف',category:'الرصيد'}])"
 )
-
 if (!source.includes('value={f.category}')) {
   source = source.replace(
     /(<label>النوع<select value=\{f\.type\}[\s\S]*?<\/select><\/label>)/,
