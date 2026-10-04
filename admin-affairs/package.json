@@ -5,12 +5,12 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "node scripts/repair-source.mjs && tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
     "fingerprint-gateway": "node scripts/fingerprint-gateway.mjs",
-    "apply:company-rules": "node scripts/apply-company-rules.mjs",
-    "start:local": "node scripts/apply-company-rules.mjs && node scripts/start-local.mjs"
+    "apply:company-rules": "node scripts/repair-source.mjs && node scripts/apply-company-rules.mjs",
+    "start:local": "node scripts/repair-source.mjs && node scripts/apply-company-rules.mjs && node scripts/start-local.mjs"
   },
   "dependencies": {
     "react": "^19.2.8",
