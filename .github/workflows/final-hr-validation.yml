@@ -1,0 +1,29 @@
+name: Final HR validation
+on:
+  push:
+    branches: [main]
+permissions:
+  contents: write
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Install
+        run: cd admin-affairs && npm install
+      - name: Build
+        run: cd admin-affairs && npm run build
+      - name: Check start rule script
+        run: cd admin-affairs && node scripts/apply-company-rules.mjs
+      - name: Remove temporary workflow
+        if: always()
+        run: |
+          rm -f .github/workflows/final-hr-validation.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --quiet || git commit -m "chore: remove temporary validation workflow"
+          git push
