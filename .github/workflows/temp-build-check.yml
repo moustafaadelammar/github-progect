@@ -11,3 +11,5 @@ jobs:
       - uses: actions/setup-node@v4
         with: {node-version: 24}
       - run: cd admin-affairs && npm install && npm run build
+
+# rerun
