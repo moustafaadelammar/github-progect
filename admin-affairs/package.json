@@ -10,7 +10,7 @@
     "preview": "vite preview",
     "fingerprint-gateway": "node scripts/fingerprint-gateway.mjs",
     "apply:company-rules": "node scripts/repair-source.mjs && node scripts/apply-company-rules.mjs",
-    "start:local": "node scripts/start-local.mjs"
+    "start:local": "node scripts/repair-source.mjs && node scripts/start-local.mjs"
   },
   "dependencies": {
     "react": "^19.2.8",
