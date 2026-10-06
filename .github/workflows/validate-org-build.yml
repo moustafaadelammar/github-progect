@@ -1,6 +1,7 @@
 name: Validate org build
 on:
-  workflow_dispatch:
+  push:
+    branches: [main]
 permissions:
   contents: read
 jobs:
