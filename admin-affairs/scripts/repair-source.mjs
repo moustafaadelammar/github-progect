@@ -51,7 +51,7 @@ source = source.replace(
 )
 source = source.replaceAll("status:'على رأس العمل'", "status:'في الخدمة'")
 source = source.replaceAll("status:pick(r,['الحالة','status'])||'على رأس العمل'", "status:pick(r,['الحالة','status'])||'في الخدمة'")
-if (!source.includes("value={form.status||'في الخدمة'}")) {
+if (!source.includes('حالة الموظف<select') && !source.includes("value={form.status||'في الخدمة'}")) {
   source = source.replace(
     /(<label>الدرجة<input value=\{form\.grade\} onChange=\{e=>set\('grade',e\.target\.value\)\}\/><\/label>)/,
     "$1<label>حالة الموظف<select value={form.status||'في الخدمة'} onChange={e=>set('status',e.target.value)}><option>في الخدمة</option><option>إجازة</option><option>معاش</option></select></label>"
